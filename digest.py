@@ -1307,8 +1307,11 @@ def main():
     html    = build_html_email(date_display, summaries)
     subject = f"⚾ Baseball Digest — {date_display} ({len(games)} games)"
     save_html_locally(html, date_str, date_display)
-    send_email(subject, html)
-    print("Email sent successfully!")
+    try:
+        send_email(subject, html)
+        print("Email sent successfully!")
+    except Exception as e:
+        print(f"  [warn] Email failed: {e}")
 
 
 if __name__ == "__main__":
