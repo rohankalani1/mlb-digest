@@ -1137,8 +1137,10 @@ def push_to_github(digests_dir, fname, date_str):
 
 
 def generate_index_html(out_dir, date_display):
-    """Regenerate the index.html landing page with archive dropdown."""
+    """Regenerate index.html — direct embed, prev/next nav, 2-col desktop layout."""
     import glob as _glob
+    import re as _re
+
     digest_files = sorted(
         [os.path.basename(f) for f in _glob.glob(os.path.join(out_dir, 'digest_*.html'))],
         reverse=True,
@@ -1146,62 +1148,138 @@ def generate_index_html(out_dir, date_display):
     if not digest_files:
         return
 
-    options = []
+    # Build (fname, short "Jun 24", full "June 24, 2026") for each digest
+    nav_items = []
     for fname in digest_files:
         try:
             dt    = datetime.strptime(fname.replace('digest_', '').replace('.html', ''), '%m-%d-%Y')
-            label = dt.strftime('%B %d, %Y')
+            full  = dt.strftime('%B %d, %Y')
+            short = dt.strftime('%b') + ' ' + str(dt.day)
         except ValueError:
-            label = fname
-        options.append(f'        <option value="{fname}">{label}</option>')
+            full = short = fname
+        nav_items.append((fname, short, full))
 
-    latest       = digest_files[0]
-    options_html = '\n'.join(options)
+    latest_fname, _, latest_full = nav_items[0]
 
-    page = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Daily Baseball Digest</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    *{{margin:0;padding:0;box-sizing:border-box}}
-    html,body{{height:100%;overflow:hidden;background:#0f172a;font-family:'Inter',-apple-system,sans-serif}}
-    .hdr{{height:58px;background:linear-gradient(135deg,#1e3a5f 0%,#1e40af 100%);display:flex;align-items:center;justify-content:space-between;padding:0 24px;gap:16px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.3)}}
-    .brand{{display:flex;align-items:center;gap:10px}}
-    .brand-icon{{font-size:24px;line-height:1}}
-    .brand-title{{font-size:16px;font-weight:800;color:#fff;letter-spacing:-.3px}}
-    .brand-sub{{font-size:10.5px;color:#93c5fd;margin-top:1px}}
-    .hdr-right{{display:flex;align-items:center;gap:10px;flex-shrink:0}}
-    .date-chip{{font-size:12px;font-weight:600;color:#bfdbfe;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:5px;padding:4px 10px;white-space:nowrap}}
-    select{{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:5px 10px;border-radius:6px;font-size:12px;font-family:inherit;cursor:pointer;outline:none}}
-    select option{{background:#1e293b;color:#fff}}
-    iframe{{width:100%;height:calc(100vh - 58px);border:none;display:block;background:#f1f5f9}}
-    @media(max-width:500px){{.brand-sub,.date-chip{{display:none}}}}
-  </style>
-</head>
-<body>
-  <div class="hdr">
-    <div class="brand">
-      <span class="brand-icon">&#9918;</span>
-      <div>
-        <div class="brand-title">Daily Baseball Digest</div>
-        <div class="brand-sub">MLB Stats API &nbsp;&#183;&nbsp; Groq AI &nbsp;&#183;&nbsp; Updated daily</div>
-      </div>
-    </div>
-    <div class="hdr-right">
-      <span class="date-chip">{date_display}</span>
-      <select onchange="if(this.value)document.getElementById('f').src=this.value" title="Browse archive">
-        <option value="">&#128197; Archive</option>
-{options_html}
-      </select>
-    </div>
-  </div>
-  <iframe id="f" src="{latest}" title="MLB Digest"></iframe>
-</body>
-</html>"""
+    # Extract the digest's CSS and <body> content from the latest file
+    digest_css  = ''
+    digest_body = ''
+    try:
+        with open(os.path.join(out_dir, latest_fname), 'r', encoding='utf-8') as fh:
+            raw = fh.read()
+        m = _re.search(r'<style>([\s\S]*?)</style>', raw)
+        if m:
+            digest_css = m.group(1).strip()
+        m2 = _re.search(r'<body>([\s\S]*?)</body>', raw)
+        if m2:
+            digest_body = m2.group(1).strip()
+    except Exception:
+        pass
+
+    # JS arrays (safe: filenames and date strings contain no curly braces)
+    js_files  = 'const files='  + '[' + ','.join(f'"{f}"' for f, _, _ in nav_items) + ']'
+    js_shorts = 'const shorts=' + '[' + ','.join(f'"{s}"' for _, s, _ in nav_items) + ']'
+    js_fulls  = 'const fulls='  + '[' + ','.join(f'"{l}"' for _, _, l in nav_items) + ']'
+
+    # Build page via string concatenation so digest CSS/HTML never enters an f-string
+    # (CSS and HTML both contain { } which would break f-string parsing)
+    site_css = """\
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{min-height:100%;background:#f1f5f9;font-family:'Inter',-apple-system,sans-serif}
+.site-nav{height:56px;background:linear-gradient(135deg,#1e3a5f 0%,#1e40af 100%);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.3);position:sticky;top:0;z-index:100}
+.brand{display:flex;align-items:center;gap:9px;flex-shrink:0}
+.brand-icon{font-size:22px;line-height:1}
+.brand-title{font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px}
+.brand-sub{font-size:10px;color:#93c5fd;margin-top:1px}
+.day-nav{display:flex;align-items:center;gap:8px}
+.nav-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .15s;white-space:nowrap}
+.nav-btn:hover:not(:disabled){background:rgba(255,255,255,.25)}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.nav-date{font-size:13px;font-weight:700;color:#fff;min-width:120px;text-align:center;white-space:nowrap}
+#dw{transition:opacity .2s}
+"""
+
+    override_css = """\
+/* hide the digest's own header/footer — replaced by site nav */
+#dw .hdr,#dw .ft{display:none}
+#dw .body{border-top:1px solid #e2e8f0;border-radius:12px}
+#dw .wrap{padding-top:24px}
+/* 2-column grid on wide screens */
+@media(min-width:1100px){
+  #dw .wrap{max-width:1240px;padding:24px 32px 48px}
+  #dw .body{display:grid;grid-template-columns:1fr 1fr;column-gap:20px;background:transparent;border:none;padding:0;border-radius:0}
+  #dw .bn{grid-column:1/-1}
+}
+@media(max-width:500px){.brand-sub{display:none}}
+"""
+
+    js_core = """\
+var idx=0;
+function updateNav(){
+  document.getElementById('lbl-cur').textContent=fulls[idx];
+  var pb=document.getElementById('btn-prev'),nb=document.getElementById('btn-next');
+  if(idx<files.length-1){pb.disabled=false;document.getElementById('lbl-prev').textContent=shorts[idx+1]}
+  else{pb.disabled=true;document.getElementById('lbl-prev').textContent=''}
+  if(idx>0){nb.disabled=false;document.getElementById('lbl-next').textContent=shorts[idx-1]}
+  else{nb.disabled=true;document.getElementById('lbl-next').textContent=''}
+}
+async function navigate(dir){
+  var ni=idx+dir;
+  if(ni<0||ni>=files.length)return;
+  idx=ni;
+  var dw=document.getElementById('dw');
+  dw.style.opacity='.5';
+  try{
+    var r=await fetch(files[idx]);
+    var h=await r.text();
+    var p=new DOMParser();
+    var d=p.parseFromString(h,'text/html');
+    var b=d.querySelector('body');
+    if(b)dw.innerHTML=b.innerHTML;
+  }catch(e){}
+  dw.style.opacity='1';
+  window.scrollTo(0,0);
+  updateNav();
+}
+updateNav();
+"""
+
+    page = (
+        '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
+        '  <meta charset="UTF-8">\n'
+        '  <meta name="viewport" content="width=device-width,initial-scale=1">\n'
+        '  <title>Daily Baseball Digest</title>\n'
+        '  <link rel="preconnect" href="https://fonts.googleapis.com">\n'
+        '  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">\n'
+        '  <style>\n'
+        + site_css + '\n'
+        + digest_css + '\n'
+        + override_css
+        + '  </style>\n</head>\n<body>\n'
+        '  <nav class="site-nav">\n'
+        '    <div class="brand">\n'
+        '      <span class="brand-icon">&#9918;</span>\n'
+        '      <div>\n'
+        '        <div class="brand-title">Daily Baseball Digest</div>\n'
+        '        <div class="brand-sub">MLB Stats API &nbsp;&#183;&nbsp; Groq AI &nbsp;&#183;&nbsp; Updated daily</div>\n'
+        '      </div>\n'
+        '    </div>\n'
+        '    <div class="day-nav">\n'
+        '      <button class="nav-btn" id="btn-prev" onclick="navigate(1)">&#8592; <span id="lbl-prev"></span></button>\n'
+        + f'      <span class="nav-date" id="lbl-cur">{latest_full}</span>\n'
+        + '      <button class="nav-btn" id="btn-next" onclick="navigate(-1)"><span id="lbl-next"></span> &#8594;</button>\n'
+        '    </div>\n'
+        '  </nav>\n'
+        '  <div id="dw">'
+        + digest_body
+        + '</div>\n'
+        '  <script>\n'
+        + js_files  + ';\n'
+        + js_shorts + ';\n'
+        + js_fulls  + ';\n'
+        + js_core
+        + '  </script>\n</body>\n</html>'
+    )
 
     try:
         with open(os.path.join(out_dir, 'index.html'), 'w', encoding='utf-8') as fh:
