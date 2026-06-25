@@ -1185,7 +1185,7 @@ def generate_index_html(out_dir, date_display):
     # (CSS and HTML both contain { } which would break f-string parsing)
     site_css = """\
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{min-height:100%;background:#f1f5f9;font-family:'Inter',-apple-system,sans-serif}
+html,body{min-height:100%;background:linear-gradient(180deg,#dde9ff 0%,#f1f5f9 28%);font-family:'Inter',-apple-system,sans-serif}
 .site-nav{height:56px;background:linear-gradient(135deg,#1e3a5f 0%,#1e40af 100%);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.3);position:sticky;top:0;z-index:100}
 .brand{display:flex;align-items:center;gap:9px;flex-shrink:0}
 .brand-icon{font-size:22px;line-height:1}
@@ -1196,25 +1196,74 @@ html,body{min-height:100%;background:#f1f5f9;font-family:'Inter',-apple-system,s
 .nav-btn:hover:not(:disabled){background:rgba(255,255,255,.25)}
 .nav-btn:disabled{opacity:.3;cursor:default}
 .nav-date{font-size:13px;font-weight:700;color:#fff;min-width:120px;text-align:center;white-space:nowrap}
+.theme-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;width:34px;height:34px;border-radius:6px;font-size:16px;cursor:pointer;flex-shrink:0;line-height:1;padding:0}
+.theme-btn:hover{background:rgba(255,255,255,.25)}
 #dw{transition:opacity .2s}
 """
 
     override_css = """\
+/* larger score pill */
+#dw .pl{padding:7px 18px}
+#dw .pn{font-size:22px}
+/* card hover lift */
+#dw .card{transition:transform .15s,box-shadow .15s;cursor:default}
+#dw .card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
 /* hide the digest's own header/footer — replaced by site nav */
 #dw .hdr,#dw .ft{display:none}
 #dw .body{border-top:1px solid #e2e8f0;border-radius:12px}
 #dw .wrap{padding-top:24px}
+/* key players section header */
+.kp-hdr{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-top:10px;border-top:1px solid #e2e8f0}
 /* 2-column grid on wide screens */
 @media(min-width:1100px){
   #dw .wrap{max-width:1240px;padding:24px 32px 48px}
   #dw .body{display:grid;grid-template-columns:1fr 1fr;column-gap:20px;background:transparent;border:none;padding:0;border-radius:0}
   #dw .bn{grid-column:1/-1}
 }
+/* dark mode */
+[data-theme="dark"] body{background:#0f172a}
+[data-theme="dark"] #dw .card{background:#1e293b;border-color:#334155 !important}
+[data-theme="dark"] #dw .tw{color:#f1f5f9}
+[data-theme="dark"] #dw .rc{color:#cbd5e1}
+[data-theme="dark"] #dw .pr{color:#94a3b8;border-top-color:#334155}
+[data-theme="dark"] #dw .sc{color:#64748b}
+[data-theme="dark"] #dw .body{background:transparent;border-color:#334155}
+[data-theme="dark"] #dw .wrap{background:transparent}
+[data-theme="dark"] #dw .ts{color:#475569}
+[data-theme="dark"] #dw .ps{color:#475569}
+[data-theme="dark"] #dw .bn{background:linear-gradient(135deg,#0f2038 0%,#1a2f6b 100%)}
+[data-theme="dark"] #dw .l0{color:#475569}
+[data-theme="dark"] #dw .l1{color:#e2e8f0}
+[data-theme="dark"] #dw .lr{color:#f1f5f9;border-left-color:#334155}
+[data-theme="dark"] #dw .lrh{color:#64748b;border-left-color:#334155}
+[data-theme="dark"] #dw .ll{color:#94a3b8}
+[data-theme="dark"] #dw .lh{color:#64748b}
+[data-theme="dark"] #dw .lw{border-top-color:#334155}
+[data-theme="dark"] .kp-hdr{color:#64748b;border-top-color:#334155}
 @media(max-width:500px){.brand-sub{display:none}}
 """
 
     js_core = """\
+function toggleTheme(){
+  var dark=document.documentElement.getAttribute("data-theme")==="dark";
+  var t=dark?"light":"dark";
+  document.documentElement.setAttribute("data-theme",t);
+  document.getElementById("theme-btn").innerHTML=t==="dark"?"&#9728;":"&#127769;";
+  localStorage.setItem("theme",t);
+}
+// Sync button icon to current theme on load
+(function(){
+  var t=document.documentElement.getAttribute("data-theme")||"light";
+  document.getElementById("theme-btn").innerHTML=t==="dark"?"&#9728;":"&#127769;";
+})();
 var idx=0;
+function styleContent(){
+  document.querySelectorAll('#dw .rc').forEach(function(el){
+    el.innerHTML=el.innerHTML
+      .replace(/^RECAP:\\s*/i,'')
+      .replace(/<br>\\s*KEY PLAYERS:\\s*<br>/i,'<div class="kp-hdr">Key Players</div>');
+  });
+}
 function updateNav(){
   document.getElementById('lbl-cur').textContent=fulls[idx];
   var pb=document.getElementById('btn-prev'),nb=document.getElementById('btn-next');
@@ -1238,10 +1287,12 @@ async function navigate(dir){
     if(b)dw.innerHTML=b.innerHTML;
   }catch(e){}
   dw.style.opacity='1';
+  styleContent();
   window.scrollTo(0,0);
   updateNav();
 }
 updateNav();
+styleContent();
 """
 
     page = (
@@ -1255,7 +1306,9 @@ updateNav();
         + site_css + '\n'
         + digest_css + '\n'
         + override_css
-        + '  </style>\n</head>\n<body>\n'
+        + '  </style>\n'
+        + '  <script>document.documentElement.setAttribute("data-theme",localStorage.getItem("theme")||"light")</script>\n'
+        + '</head>\n<body>\n'
         '  <nav class="site-nav">\n'
         '    <div class="brand">\n'
         '      <span class="brand-icon">&#9918;</span>\n'
@@ -1268,8 +1321,9 @@ updateNav();
         '      <button class="nav-btn" id="btn-prev" onclick="navigate(1)">&#8592; <span id="lbl-prev"></span></button>\n'
         + f'      <span class="nav-date" id="lbl-cur">{latest_full}</span>\n'
         + '      <button class="nav-btn" id="btn-next" onclick="navigate(-1)"><span id="lbl-next"></span> &#8594;</button>\n'
-        '    </div>\n'
-        '  </nav>\n'
+        + '    </div>\n'
+        + '    <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle dark mode">&#127769;</button>\n'
+        + '  </nav>\n'
         '  <div id="dw">'
         + digest_body
         + '</div>\n'
