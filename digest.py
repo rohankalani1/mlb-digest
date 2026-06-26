@@ -1386,7 +1386,7 @@ html,body{min-height:100%;font-family:'Inter',-apple-system,sans-serif;overflow-
 /* darker, bolder dash between scores */
 #dw .ps{color:#0f172a;font-weight:800}
 /* page background — must be after digest_css to override body{background:#f1f5f9} */
-html,body{background:#0f172a}
+html,body{background:#eef2f8}
 /* card entrance animation + hover lift */
 @keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 #dw .card{transition:transform .2s ease,box-shadow .2s ease;cursor:default;overflow:hidden;animation:cardIn .35s ease both}
@@ -1429,7 +1429,7 @@ function styleContent(){
   });
   document.querySelectorAll('#dw .card[data-wc]').forEach(function(card,i){
     var c=card.getAttribute('data-wc');
-    card.style.background='linear-gradient(135deg,'+c+'20 0%,#fff 45%)';
+    card.style.background='linear-gradient(135deg,'+c+'0D 0%,#fff 45%)';
     card.style.animationDelay=(i*50)+'ms';
     card.onmouseenter=function(){
       this.style.transform='translateY(-5px)';
