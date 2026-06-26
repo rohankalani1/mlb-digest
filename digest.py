@@ -1057,12 +1057,14 @@ def build_html_email(date_display, game_summaries):
         else:
             banner_label = banner_desc = None
 
-        banner = ""
         if banner_label:
-            banner = (f'<div class="bn"><div class="bn-l">&#11088; {banner_label}</div>'
-                      f'<div class="bn-d">{banner_desc}</div></div>')
-
-        body_content = banner + "".join(render_game_card(gs) for gs in sorted_summaries)
+            banner_html = (f'<div class="bn"><div class="bn-l">&#11088; {banner_label}</div>'
+                           f'<div class="bn-d">{banner_desc}</div></div>')
+            first_card  = render_game_card(sorted_summaries[0])
+            body_content = (f'<div class="gotd-wrap">{banner_html}{first_card}</div>'
+                            + "".join(render_game_card(gs) for gs in sorted_summaries[1:]))
+        else:
+            body_content = "".join(render_game_card(gs) for gs in sorted_summaries)
         count_line   = f"{len(game_summaries)} game{'s' if len(game_summaries) != 1 else ''} played"
 
     return f"""<!DOCTYPE html>
@@ -1203,6 +1205,8 @@ html,body{min-height:100%;background:#f0f4f8;font-family:'Inter',-apple-system,s
 /* larger score pill */
 #dw .pl{padding:7px 18px;background:#1e40af}
 #dw .pn{font-size:22px}
+/* darker, bolder dash between scores */
+#dw .ps{color:#0f172a;font-weight:800}
 /* card hover lift */
 #dw .card{transition:transform .15s,box-shadow .15s;cursor:default}
 #dw .card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
@@ -1212,11 +1216,14 @@ html,body{min-height:100%;background:#f0f4f8;font-family:'Inter',-apple-system,s
 #dw .wrap{padding-top:24px}
 /* key players section header */
 .kp-hdr{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-top:10px;border-top:1px solid #e2e8f0}
+/* larger linescore */
+#dw .ll,#dw .lh,#dw .l0,#dw .l1,#dw .lr,#dw .lrh{font-size:13px}
+/* gotd wrapper: banner + card stacked in one grid column */
+#dw .gotd-wrap{display:flex;flex-direction:column}
 /* 2-column grid on wide screens */
 @media(min-width:1100px){
   #dw .wrap{max-width:1240px;padding:24px 32px 48px}
   #dw .body{display:grid;grid-template-columns:1fr 1fr;column-gap:20px;background:transparent;border:none;padding:0;border-radius:0}
-  #dw .bn{grid-column:1/-1}
 }
 @media(max-width:500px){
   .brand-sub{display:none}

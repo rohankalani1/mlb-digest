@@ -25,6 +25,8 @@ body{margin:0;padding:0;background:#f1f5f9}.wrap{max-width:660px;margin:0 auto;p
 /* larger score pill */
 #dw .pl{padding:7px 18px;background:#1e40af}
 #dw .pn{font-size:22px}
+/* darker, bolder dash between scores */
+#dw .ps{color:#0f172a;font-weight:800}
 /* card hover lift */
 #dw .card{transition:transform .15s,box-shadow .15s;cursor:default}
 #dw .card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
@@ -34,11 +36,14 @@ body{margin:0;padding:0;background:#f1f5f9}.wrap{max-width:660px;margin:0 auto;p
 #dw .wrap{padding-top:24px}
 /* key players section header */
 .kp-hdr{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-top:10px;border-top:1px solid #e2e8f0}
+/* larger linescore */
+#dw .ll,#dw .lh,#dw .l0,#dw .l1,#dw .lr,#dw .lrh{font-size:13px}
+/* gotd wrapper: banner + card stacked in one grid column */
+#dw .gotd-wrap{display:flex;flex-direction:column}
 /* 2-column grid on wide screens */
 @media(min-width:1100px){
   #dw .wrap{max-width:1240px;padding:24px 32px 48px}
   #dw .body{display:grid;grid-template-columns:1fr 1fr;column-gap:20px;background:transparent;border:none;padding:0;border-radius:0}
-  #dw .bn{grid-column:1/-1}
 }
 @media(max-width:500px){
   .brand-sub{display:none}
