@@ -1041,6 +1041,79 @@ def render_game_card(gs, gotd_label=None):
     )
 
 
+def get_standings(year):
+    """Fetch AL and NL division standings."""
+    div_meta = {
+        201: ('AL', 'East'),
+        202: ('AL', 'Central'),
+        200: ('AL', 'West'),
+        203: ('NL', 'East'),
+        204: ('NL', 'Central'),
+        205: ('NL', 'West'),
+    }
+    result = {'AL': {}, 'NL': {}}
+    try:
+        data = statsapi.standings_data(leagueId='103,104', season=year)
+        for div_id, div_data in data.items():
+            if div_id not in div_meta:
+                continue
+            league, div_short = div_meta[div_id]
+            teams = []
+            for t in div_data.get('teams', []):
+                name   = t.get('name', '')
+                abbr   = TEAM_ABBREVS.get(name, name[:3].upper())
+                gb_raw = str(t.get('gb', '-')).strip()
+                gb     = '—' if gb_raw in ('-', '0.0', '0', '') else gb_raw
+                teams.append({
+                    'abbr':   abbr,
+                    'w':      t.get('w', 0),
+                    'l':      t.get('l', 0),
+                    'gb':     gb,
+                    'leader': str(t.get('div_rank', '9')) == '1',
+                })
+            result[league][div_short] = teams
+    except Exception as e:
+        print(f"  [warn] Could not fetch standings: {e}")
+    return result
+
+
+def render_standings_html(standings):
+    if not standings or (not standings.get('AL') and not standings.get('NL')):
+        return ''
+
+    def league_card(league, label, cls):
+        divs_html = ''
+        for div_short in ('East', 'Central', 'West'):
+            teams = standings.get(league, {}).get(div_short, [])
+            rows  = ''
+            for t in teams:
+                ldr_cls = ' stg-ldr' if t['leader'] else ''
+                rows += (
+                    f'<tr class="stg-row{ldr_cls}">'
+                    f'<td class="stg-abbr">{t["abbr"]}</td>'
+                    f'<td class="stg-wl">{t["w"]}-{t["l"]}</td>'
+                    f'<td class="stg-gb">{t["gb"]}</td>'
+                    f'</tr>'
+                )
+            divs_html += (
+                f'<div class="stg-div">'
+                f'<div class="stg-dh">{league} {div_short}</div>'
+                f'<table class="stg-tbl">{rows}</table>'
+                f'</div>'
+            )
+        return (
+            f'<div class="stg {cls}">'
+            f'<div class="stg-ttl">{label}</div>'
+            f'<div class="stg-cols">{divs_html}</div>'
+            f'</div>'
+        )
+
+    return (
+        league_card('AL', 'American League', 'stg-al')
+        + league_card('NL', 'National League', 'stg-nl')
+    )
+
+
 def get_stat_leaders(year):
     """Fetch the #1 leader for each key hitting and pitching stat."""
     ordered = [
@@ -1095,7 +1168,7 @@ def render_leaders_html(leaders):
     )
 
 
-def build_html_email(date_display, game_summaries, leaders=None):
+def build_html_email(date_display, game_summaries, leaders=None, standings=None):
     if not game_summaries:
         body_content = """<div style="text-align:center;padding:48px 0;color:#94a3b8;
                                       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
@@ -1144,6 +1217,30 @@ def build_html_email(date_display, game_summaries, leaders=None):
     ) if leaders else ''
     leaders_html = render_leaders_html(leaders) if leaders else ''
 
+    standings_css = (
+        '.stg{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin-top:18px}'
+        '.stg-al{border-left:4px solid #dc2626}'
+        '.stg-nl{border-left:4px solid #1e3a5f}'
+        ".stg-ttl{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
+        '.stg-al .stg-ttl{color:#dc2626}'
+        '.stg-nl .stg-ttl{color:#1e3a5f}'
+        '.stg-cols{display:flex;gap:0;overflow-x:auto}'
+        '.stg-div{flex:1;min-width:90px;padding:0 12px;border-right:1px solid #f1f5f9}'
+        '.stg-div:first-child{padding-left:0}'
+        '.stg-div:last-child{padding-right:0;border-right:none}'
+        ".stg-dh{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
+        '.stg-tbl{border-collapse:collapse;width:100%}'
+        ".stg-row td{padding:2px 3px;font-size:11px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
+        '.stg-abbr{font-weight:600;color:#1e293b;white-space:nowrap}'
+        '.stg-wl{color:#64748b;white-space:nowrap;padding-left:4px}'
+        '.stg-gb{color:#94a3b8;text-align:right;white-space:nowrap}'
+        '.stg-ldr .stg-abbr{font-weight:800}'
+        '.stg-al .stg-ldr .stg-abbr{color:#dc2626}'
+        '.stg-nl .stg-ldr .stg-abbr{color:#1e3a5f}'
+        '.stg-ldr .stg-gb{color:#16a34a;font-weight:600}'
+    ) if standings else ''
+    standings_html = render_standings_html(standings) if standings else ''
+
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1152,6 +1249,7 @@ def build_html_email(date_display, game_summaries, leaders=None):
   <style>
 body{{margin:0;padding:0;background:#f1f5f9}}.wrap{{max-width:660px;margin:0 auto;padding:28px 16px 48px}}.hdr{{background:linear-gradient(135deg,#1e3a5f 0%,#1e40af 100%);border-radius:12px 12px 0 0;padding:30px 32px;text-align:center}}.hdr h1{{margin:0 0 4px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:22px;font-weight:800;color:#fff;letter-spacing:-.3px}}.hdr p{{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:#93c5fd}}.body{{background:#f8fafc;padding:24px 24px 8px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px}}.ft{{text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;color:#94a3b8;margin-top:20px}}.bn{{background:linear-gradient(135deg,#0f3460 0%,#1e40af 100%);border-radius:8px;padding:14px 20px;margin-bottom:20px}}.bn-l{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:10px;font-weight:700;color:#93c5fd;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}}.bn-d{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;font-weight:600;color:#fff}}.card{{background:#fff;border-top:1px solid #e2e8f0;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;border-radius:10px;padding:18px 20px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.06)}}.mu{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;vertical-align:middle}}.tw{{font-weight:700;color:#1e293b}}.tl{{font-weight:400;color:#94a3b8}}.ts{{color:#cbd5e1;font-weight:300;margin:0 6px}}.lg{{width:22px;height:22px;vertical-align:middle;margin-right:5px}}.pl{{display:inline-block;background:#0f172a;border-radius:6px;padding:5px 14px;white-space:nowrap}}.pn{{font-family:'Courier New',monospace;font-size:19px;font-weight:800}}.ps{{font-family:'Courier New',monospace;font-size:14px;color:#334155;margin:0 6px}}.pr{{font-size:13.5px;color:#374151;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:8px 0 0;margin-top:2px;border-top:1px solid #f1f5f9}}.sc{{font-size:11px;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:3px 0 2px}}.rc{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13.5px;color:#374151;line-height:1.7;margin-top:12px}}.bdg{{font-size:10px;font-family:monospace;border-radius:3px;padding:1px 6px}}.bw{{background:#fef9c3;color:#854d0e;border:1px solid #fde047;margin-left:8px}}.bi{{background:#fef9c3;color:#854d0e;border:1px solid #fde047;margin-left:6px}}.bg{{background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;margin-left:6px}}.bm{{background:#f5f3ff;color:#6d28d9;border:1px solid #c4b5fd;margin-left:6px}}.bp{{background:#fdf4ff;color:#9333ea;border:1px solid #e9d5ff;margin-left:6px}}.sw{{font-size:10px;font-family:monospace;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:3px;padding:1px 6px}}.sl{{font-size:10px;font-family:monospace;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:3px;padding:1px 6px}}.qs{{font-size:10px;background:#dbeafe;color:#1d4ed8;border-radius:2px;padding:0 4px;margin-left:3px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}}.lw{{margin-top:8px;padding-top:6px;border-top:1px solid #f1f5f9;overflow-x:auto}}.lt{{border-collapse:collapse}}.ll{{padding:1px 8px 1px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;font-weight:600;color:#64748b;white-space:nowrap}}.lh{{padding:1px 5px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#94a3b8}}.l0{{padding:1px 5px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#cbd5e1}}.l1{{padding:1px 5px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#1e293b;font-weight:600}}.lr{{padding:1px 5px 1px 8px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#1e293b;font-weight:700;border-left:1px solid #e2e8f0}}.lrh{{padding:1px 5px 1px 8px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#94a3b8;border-left:1px solid #e2e8f0}}
 {leaders_css}
+{standings_css}
   </style>
 </head>
 <body>
@@ -1163,6 +1261,7 @@ body{{margin:0;padding:0;background:#f1f5f9}}.wrap{{max-width:660px;margin:0 aut
     </div>
     {leaders_html}
     <div class="body">{body_content}</div>
+    {standings_html}
     <p class="ft">Automated digest &nbsp;&#183;&nbsp; MLB Stats API + Groq AI &nbsp;&#183;&nbsp; Free tier</p>
   </div>
 </body>
@@ -1299,6 +1398,9 @@ html,body{background:#0f172a}
 /* leaders card on dark background */
 #dw .ldrs{animation:cardIn .35s ease both;border-left:4px solid #1e40af}
 #dw .ldr{background:#f0f4f8}
+/* standings cards on dark background */
+#dw .stg{animation:cardIn .35s ease both}
+#dw .stg-div{border-right-color:#e2e8f0}
 /* key players section header */
 .kp-hdr{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-top:10px;border-top:1px solid #e2e8f0}
 /* larger linescore */
@@ -1438,9 +1540,15 @@ def main():
     leaders = get_stat_leaders(year)
     print(f"  Got {len(leaders)} leader stats.")
 
+    print("Fetching standings...")
+    standings = get_standings(year)
+    al_divs = sum(len(v) for v in standings.get('AL', {}).values())
+    nl_divs = sum(len(v) for v in standings.get('NL', {}).values())
+    print(f"  Got AL={al_divs} teams, NL={nl_divs} teams.")
+
     if not games:
         print("No completed games found — sending off-day notice.")
-        html = build_html_email(date_display, [], leaders=leaders)
+        html = build_html_email(date_display, [], leaders=leaders, standings=standings)
         save_html_locally(html, date_str, date_display)
         send_email(f"⚾ Baseball Digest — {date_display} (Off Day)", html)
         print("Done.")
@@ -1513,7 +1621,7 @@ def main():
     total_tokens = token_totals['prompt'] + token_totals['completion']
     print(f"\nGroq usage: {token_totals['prompt']} prompt + {token_totals['completion']} completion = {total_tokens} tokens total")
     print(f"Building email and sending to {RECIPIENT_EMAIL}...")
-    html    = build_html_email(date_display, summaries, leaders=leaders)
+    html    = build_html_email(date_display, summaries, leaders=leaders, standings=standings)
     subject = f"⚾ Baseball Digest — {date_display} ({len(games)} games)"
     save_html_locally(html, date_str, date_display)
     try:
