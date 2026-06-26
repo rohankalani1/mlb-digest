@@ -1222,8 +1222,8 @@ html,body{min-height:100%;font-family:'Inter',-apple-system,sans-serif;overflow-
 html,body{background:#0f172a}
 /* card entrance animation + hover lift */
 @keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-#dw .card{transition:transform .15s,box-shadow .15s;cursor:default;overflow:hidden;animation:cardIn .35s ease both}
-#dw .card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
+#dw .card{transition:transform .2s ease,box-shadow .2s ease;cursor:default;overflow:hidden;animation:cardIn .35s ease both}
+#dw .card:hover{transform:translateY(-5px)}
 /* hide the digest's own header/footer — replaced by site nav */
 #dw .hdr,#dw .ft{display:none}
 #dw .body{background:transparent;border:none;border-radius:0}
@@ -1255,8 +1255,17 @@ function styleContent(){
       .replace(/<br>\\s*KEY PLAYERS:\\s*<br>/i,'<div class="kp-hdr">Key Players</div>');
   });
   document.querySelectorAll('#dw .card[data-wc]').forEach(function(card,i){
-    card.style.background='linear-gradient(135deg,'+card.getAttribute('data-wc')+'20 0%,#fff 45%)';
+    var c=card.getAttribute('data-wc');
+    card.style.background='linear-gradient(135deg,'+c+'20 0%,#fff 45%)';
     card.style.animationDelay=(i*50)+'ms';
+    card.onmouseenter=function(){
+      this.style.transform='translateY(-5px)';
+      this.style.boxShadow='0 16px 40px '+c+'55,0 4px 12px rgba(0,0,0,.2)';
+    };
+    card.onmouseleave=function(){
+      this.style.transform='';
+      this.style.boxShadow='';
+    };
   });
 }
 function updateNav(){
