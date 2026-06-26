@@ -938,7 +938,7 @@ def render_linescore_html(linescore, away_name, home_name):
     )
 
 
-def render_game_card(gs):
+def render_game_card(gs, gotd_label=None):
     away, home = gs['matchup'].split(' @ ')
     away_rec   = gs.get('away_record', '')
     home_rec   = gs.get('home_record', '')
@@ -1011,9 +1011,22 @@ def render_game_card(gs):
     if gs.get('series_context'):
         meta_section += f'<div class="sc">{gs["series_context"]}</div>'
 
+    gotd_strip = ''
+    if gotd_label:
+        gotd_strip = (
+            '<div class="gotd-strip" style="'
+            'margin:-18px -20px 14px -20px;padding:7px 20px;'
+            'background:linear-gradient(135deg,#0f3460 0%,#1e40af 100%);'
+            "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;"
+            'font-size:10px;font-weight:700;color:#93c5fd;'
+            'letter-spacing:.1em;text-transform:uppercase;">'
+            f'&#11088; {gotd_label}</div>'
+        )
+
     return (
-        f'<div class="card" style="border-left:4px solid {team_color};">'
-        f'<table width="100%" cellpadding="0" cellspacing="0"><tr>'
+        f'<div class="card" style="border-left:4px solid {team_color};overflow:hidden;">'
+        + gotd_strip
+        + '<table width="100%" cellpadding="0" cellspacing="0"><tr>'
         f'<td class="mu">'
         f'{away_logo}<span class="{away_cls}">{away_label}</span>{away_streak_badge}'
         f'<span class="ts">@</span>'
@@ -1058,11 +1071,8 @@ def build_html_email(date_display, game_summaries):
             banner_label = banner_desc = None
 
         if banner_label:
-            banner_html = (f'<div class="bn"><div class="bn-l">&#11088; {banner_label}</div>'
-                           f'<div class="bn-d">{banner_desc}</div></div>')
-            first_card  = render_game_card(sorted_summaries[0])
-            body_content = (f'<div class="gotd-wrap">{banner_html}{first_card}</div>'
-                            + "".join(render_game_card(gs) for gs in sorted_summaries[1:]))
+            first_card   = render_game_card(sorted_summaries[0], gotd_label=banner_label)
+            body_content = first_card + "".join(render_game_card(gs) for gs in sorted_summaries[1:])
         else:
             body_content = "".join(render_game_card(gs) for gs in sorted_summaries)
         count_line   = f"{len(game_summaries)} game{'s' if len(game_summaries) != 1 else ''} played"
@@ -1207,8 +1217,8 @@ html,body{min-height:100%;background:#f0f4f8;font-family:'Inter',-apple-system,s
 #dw .pn{font-size:22px}
 /* darker, bolder dash between scores */
 #dw .ps{color:#0f172a;font-weight:800}
-/* card hover lift */
-#dw .card{transition:transform .15s,box-shadow .15s;cursor:default}
+/* card hover lift — overflow:hidden clips gotd strip to card's border-radius */
+#dw .card{transition:transform .15s,box-shadow .15s;cursor:default;overflow:hidden}
 #dw .card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
 /* hide the digest's own header/footer — replaced by site nav */
 #dw .hdr,#dw .ft{display:none}
@@ -1218,8 +1228,6 @@ html,body{min-height:100%;background:#f0f4f8;font-family:'Inter',-apple-system,s
 .kp-hdr{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-top:10px;border-top:1px solid #e2e8f0}
 /* larger linescore */
 #dw .ll,#dw .lh,#dw .l0,#dw .l1,#dw .lr,#dw .lrh{font-size:13px}
-/* gotd wrapper: banner + card stacked in one grid column */
-#dw .gotd-wrap{display:flex;flex-direction:column}
 /* 2-column grid on wide screens */
 @media(min-width:1100px){
   #dw .wrap{max-width:1240px;padding:24px 32px 48px}

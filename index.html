@@ -27,8 +27,8 @@ body{margin:0;padding:0;background:#f1f5f9}.wrap{max-width:660px;margin:0 auto;p
 #dw .pn{font-size:22px}
 /* darker, bolder dash between scores */
 #dw .ps{color:#0f172a;font-weight:800}
-/* card hover lift */
-#dw .card{transition:transform .15s,box-shadow .15s;cursor:default}
+/* card hover lift — overflow:hidden clips gotd strip to card's border-radius */
+#dw .card{transition:transform .15s,box-shadow .15s;cursor:default;overflow:hidden}
 #dw .card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
 /* hide the digest's own header/footer — replaced by site nav */
 #dw .hdr,#dw .ft{display:none}
@@ -38,8 +38,6 @@ body{margin:0;padding:0;background:#f1f5f9}.wrap{max-width:660px;margin:0 auto;p
 .kp-hdr{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-top:10px;border-top:1px solid #e2e8f0}
 /* larger linescore */
 #dw .ll,#dw .lh,#dw .l0,#dw .l1,#dw .lr,#dw .lrh{font-size:13px}
-/* gotd wrapper: banner + card stacked in one grid column */
-#dw .gotd-wrap{display:flex;flex-direction:column}
 /* 2-column grid on wide screens */
 @media(min-width:1100px){
   #dw .wrap{max-width:1240px;padding:24px 32px 48px}
