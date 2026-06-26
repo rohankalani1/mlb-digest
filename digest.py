@@ -1198,7 +1198,7 @@ def generate_index_html(out_dir, date_display):
     # (CSS and HTML both contain { } which would break f-string parsing)
     site_css = """\
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{min-height:100%;background:#f0f4f8;font-family:'Inter',-apple-system,sans-serif;overflow-x:hidden}
+html,body{min-height:100%;background:#0f172a;font-family:'Inter',-apple-system,sans-serif;overflow-x:hidden}
 .site-nav{height:56px;background:linear-gradient(135deg,#1e3a5f 0%,#1e40af 100%);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.3);position:sticky;top:0;z-index:100}
 .brand{display:flex;align-items:center;gap:9px;flex-shrink:0}
 .brand-icon{font-size:22px;line-height:1}
@@ -1224,7 +1224,7 @@ html,body{min-height:100%;background:#f0f4f8;font-family:'Inter',-apple-system,s
 #dw .card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
 /* hide the digest's own header/footer — replaced by site nav */
 #dw .hdr,#dw .ft{display:none}
-#dw .body{border-top:1px solid #e2e8f0;border-radius:12px}
+#dw .body{background:transparent;border:none;border-radius:0}
 #dw .wrap{padding-top:24px}
 /* key players section header */
 .kp-hdr{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-top:10px;border-top:1px solid #e2e8f0}
