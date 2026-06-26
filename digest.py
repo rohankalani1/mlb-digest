@@ -1185,7 +1185,7 @@ def generate_index_html(out_dir, date_display):
     # (CSS and HTML both contain { } which would break f-string parsing)
     site_css = """\
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{min-height:100%;background:#f0f4f8;font-family:'Inter',-apple-system,sans-serif}
+html,body{min-height:100%;background:#f0f4f8;font-family:'Inter',-apple-system,sans-serif;overflow-x:hidden}
 .site-nav{height:56px;background:linear-gradient(135deg,#1e3a5f 0%,#1e40af 100%);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.3);position:sticky;top:0;z-index:100}
 .brand{display:flex;align-items:center;gap:9px;flex-shrink:0}
 .brand-icon{font-size:22px;line-height:1}
@@ -1218,7 +1218,13 @@ html,body{min-height:100%;background:#f0f4f8;font-family:'Inter',-apple-system,s
   #dw .body{display:grid;grid-template-columns:1fr 1fr;column-gap:20px;background:transparent;border:none;padding:0;border-radius:0}
   #dw .bn{grid-column:1/-1}
 }
-@media(max-width:500px){.brand-sub{display:none}}
+@media(max-width:500px){
+  .brand-sub{display:none}
+  .site-nav{padding:0 10px;gap:6px}
+  .brand-title{font-size:13px}
+  .nav-btn{padding:4px 8px;font-size:11px}
+  .nav-date{min-width:0;font-size:11px}
+}
 """
 
     js_core = """\
