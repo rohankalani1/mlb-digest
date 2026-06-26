@@ -2,7 +2,7 @@ name: Daily MLB Digest
 
 on:
   schedule:
-    - cron: '0 12 * * *'   # 8 AM EDT (UTC-4, MLB season Apr–Oct)
+    - cron: '0 9 * * *'    # 5 AM EDT (UTC-4), runs well before 8 AM
   workflow_dispatch:        # Allow manual runs from the GitHub UI
 
 jobs:
