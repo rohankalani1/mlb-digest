@@ -1198,7 +1198,7 @@ def generate_index_html(out_dir, date_display):
     # (CSS and HTML both contain { } which would break f-string parsing)
     site_css = """\
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{min-height:100%;background:#0f172a;font-family:'Inter',-apple-system,sans-serif;overflow-x:hidden}
+html,body{min-height:100%;font-family:'Inter',-apple-system,sans-serif;overflow-x:hidden}
 .site-nav{height:56px;background:linear-gradient(135deg,#1e3a5f 0%,#1e40af 100%);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.3);position:sticky;top:0;z-index:100}
 .brand{display:flex;align-items:center;gap:9px;flex-shrink:0}
 .brand-icon{font-size:22px;line-height:1}
@@ -1218,6 +1218,8 @@ html,body{min-height:100%;background:#0f172a;font-family:'Inter',-apple-system,s
 #dw .pn{font-size:22px}
 /* darker, bolder dash between scores */
 #dw .ps{color:#0f172a;font-weight:800}
+/* page background — must be after digest_css to override body{background:#f1f5f9} */
+html,body{background:#0f172a}
 /* card entrance animation + hover lift */
 @keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 #dw .card{transition:transform .15s,box-shadow .15s;cursor:default;overflow:hidden;animation:cardIn .35s ease both}
