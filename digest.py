@@ -1041,7 +1041,61 @@ def render_game_card(gs, gotd_label=None):
     )
 
 
-def build_html_email(date_display, game_summaries):
+def get_stat_leaders(year):
+    """Fetch the #1 leader for each key hitting and pitching stat."""
+    ordered = [
+        ('homeRuns',                     'HR'),
+        ('battingAverage',               'AVG'),
+        ('rbi',                          'RBI'),
+        ('stolenBases',                  'SB'),
+        ('earnedRunAverage',             'ERA'),
+        ('strikeouts',                   'K'),
+        ('walksAndHitsPerInningPitched', 'WHIP'),
+    ]
+    cat_str   = ','.join(c[0] for c in ordered)
+    label_map = {c[0]: c[1] for c in ordered}
+    found = {}
+    try:
+        data = statsapi.get('stats/leaders', {
+            'leaderCategories': cat_str,
+            'season': year,
+            'limit': 1,
+        })
+        for group in data.get('leagueLeaders', []):
+            api_cat  = group.get('leaderCategory', '')
+            top_list = group.get('leaders', [])
+            if top_list and api_cat in label_map:
+                top  = top_list[0]
+                name = top.get('person', {}).get('fullName', '')
+                last = name.split()[-1] if name else ''
+                team = top.get('team', {}).get('abbreviation', '')
+                val  = top.get('value', '')
+                found[api_cat] = (label_map[api_cat], last, team, val)
+    except Exception as e:
+        print(f"  [warn] Could not fetch stat leaders: {e}")
+    return [found[c] for c, _ in ordered if c in found]
+
+
+def render_leaders_html(leaders):
+    if not leaders:
+        return ''
+    items = ''.join(
+        f'<div class="ldr">'
+        f'<span class="ldr-cat">{lbl}</span>'
+        f'<span class="ldr-nm">{nm} <span class="ldr-tm">{tm}</span></span>'
+        f'<span class="ldr-vl">{vl}</span>'
+        f'</div>'
+        for lbl, nm, tm, vl in leaders
+    )
+    return (
+        '<div class="ldrs">'
+        '<div class="ldrs-hdr">League Leaders</div>'
+        f'<div class="ldrs-grid">{items}</div>'
+        '</div>'
+    )
+
+
+def build_html_email(date_display, game_summaries, leaders=None):
     if not game_summaries:
         body_content = """<div style="text-align:center;padding:48px 0;color:#94a3b8;
                                       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
@@ -1078,6 +1132,18 @@ def build_html_email(date_display, game_summaries):
             body_content = "".join(render_game_card(gs) for gs in sorted_summaries)
         count_line   = f"{len(game_summaries)} game{'s' if len(game_summaries) != 1 else ''} played"
 
+    leaders_css = (
+        '.ldrs{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 20px;margin-bottom:18px}'
+        ".ldrs-hdr{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin-bottom:10px}"
+        '.ldrs-grid{display:flex;flex-wrap:wrap;gap:6px}'
+        ".ldr{display:flex;align-items:center;gap:5px;background:#f8fafc;border-radius:6px;padding:5px 10px;flex:1;min-width:120px}"
+        '.ldr-cat{font-size:10px;font-weight:700;color:#1e40af;font-family:monospace;min-width:32px}'
+        ".ldr-nm{font-size:12px;font-weight:600;color:#1e293b;flex:1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
+        '.ldr-tm{font-size:10px;font-weight:400;color:#94a3b8}'
+        ".ldr-vl{font-size:13px;font-weight:800;color:#1e293b;font-family:'Courier New',monospace}"
+    ) if leaders else ''
+    leaders_html = render_leaders_html(leaders) if leaders else ''
+
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1085,6 +1151,7 @@ def build_html_email(date_display, game_summaries):
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
 body{{margin:0;padding:0;background:#f1f5f9}}.wrap{{max-width:660px;margin:0 auto;padding:28px 16px 48px}}.hdr{{background:linear-gradient(135deg,#1e3a5f 0%,#1e40af 100%);border-radius:12px 12px 0 0;padding:30px 32px;text-align:center}}.hdr h1{{margin:0 0 4px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:22px;font-weight:800;color:#fff;letter-spacing:-.3px}}.hdr p{{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:#93c5fd}}.body{{background:#f8fafc;padding:24px 24px 8px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px}}.ft{{text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;color:#94a3b8;margin-top:20px}}.bn{{background:linear-gradient(135deg,#0f3460 0%,#1e40af 100%);border-radius:8px;padding:14px 20px;margin-bottom:20px}}.bn-l{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:10px;font-weight:700;color:#93c5fd;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}}.bn-d{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;font-weight:600;color:#fff}}.card{{background:#fff;border-top:1px solid #e2e8f0;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;border-radius:10px;padding:18px 20px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.06)}}.mu{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;vertical-align:middle}}.tw{{font-weight:700;color:#1e293b}}.tl{{font-weight:400;color:#94a3b8}}.ts{{color:#cbd5e1;font-weight:300;margin:0 6px}}.lg{{width:22px;height:22px;vertical-align:middle;margin-right:5px}}.pl{{display:inline-block;background:#0f172a;border-radius:6px;padding:5px 14px;white-space:nowrap}}.pn{{font-family:'Courier New',monospace;font-size:19px;font-weight:800}}.ps{{font-family:'Courier New',monospace;font-size:14px;color:#334155;margin:0 6px}}.pr{{font-size:13.5px;color:#374151;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:8px 0 0;margin-top:2px;border-top:1px solid #f1f5f9}}.sc{{font-size:11px;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:3px 0 2px}}.rc{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13.5px;color:#374151;line-height:1.7;margin-top:12px}}.bdg{{font-size:10px;font-family:monospace;border-radius:3px;padding:1px 6px}}.bw{{background:#fef9c3;color:#854d0e;border:1px solid #fde047;margin-left:8px}}.bi{{background:#fef9c3;color:#854d0e;border:1px solid #fde047;margin-left:6px}}.bg{{background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;margin-left:6px}}.bm{{background:#f5f3ff;color:#6d28d9;border:1px solid #c4b5fd;margin-left:6px}}.bp{{background:#fdf4ff;color:#9333ea;border:1px solid #e9d5ff;margin-left:6px}}.sw{{font-size:10px;font-family:monospace;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:3px;padding:1px 6px}}.sl{{font-size:10px;font-family:monospace;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:3px;padding:1px 6px}}.qs{{font-size:10px;background:#dbeafe;color:#1d4ed8;border-radius:2px;padding:0 4px;margin-left:3px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}}.lw{{margin-top:8px;padding-top:6px;border-top:1px solid #f1f5f9;overflow-x:auto}}.lt{{border-collapse:collapse}}.ll{{padding:1px 8px 1px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;font-weight:600;color:#64748b;white-space:nowrap}}.lh{{padding:1px 5px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#94a3b8}}.l0{{padding:1px 5px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#cbd5e1}}.l1{{padding:1px 5px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#1e293b;font-weight:600}}.lr{{padding:1px 5px 1px 8px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#1e293b;font-weight:700;border-left:1px solid #e2e8f0}}.lrh{{padding:1px 5px 1px 8px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#94a3b8;border-left:1px solid #e2e8f0}}
+{leaders_css}
   </style>
 </head>
 <body>
@@ -1094,6 +1161,7 @@ body{{margin:0;padding:0;background:#f1f5f9}}.wrap{{max-width:660px;margin:0 aut
       <h1>Daily Baseball Digest</h1>
       <p>{date_display} &nbsp;&#183;&nbsp; {count_line}</p>
     </div>
+    {leaders_html}
     <div class="body">{body_content}</div>
     <p class="ft">Automated digest &nbsp;&#183;&nbsp; MLB Stats API + Groq AI &nbsp;&#183;&nbsp; Free tier</p>
   </div>
@@ -1228,6 +1296,9 @@ html,body{background:#0f172a}
 #dw .hdr,#dw .ft{display:none}
 #dw .body{background:transparent;border:none;border-radius:0}
 #dw .wrap{padding-top:24px}
+/* leaders card on dark background */
+#dw .ldrs{animation:cardIn .35s ease both;border-left:4px solid #1e40af}
+#dw .ldr{background:#f0f4f8}
 /* key players section header */
 .kp-hdr{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-top:10px;border-top:1px solid #e2e8f0}
 /* larger linescore */
@@ -1363,9 +1434,13 @@ def main():
         games = games[:max_games]
     team_records, team_streaks = fetch_team_records(year)
 
+    print("Fetching stat leaders...")
+    leaders = get_stat_leaders(year)
+    print(f"  Got {len(leaders)} leader stats.")
+
     if not games:
         print("No completed games found — sending off-day notice.")
-        html = build_html_email(date_display, [])
+        html = build_html_email(date_display, [], leaders=leaders)
         save_html_locally(html, date_str, date_display)
         send_email(f"⚾ Baseball Digest — {date_display} (Off Day)", html)
         print("Done.")
@@ -1438,7 +1513,7 @@ def main():
     total_tokens = token_totals['prompt'] + token_totals['completion']
     print(f"\nGroq usage: {token_totals['prompt']} prompt + {token_totals['completion']} completion = {total_tokens} tokens total")
     print(f"Building email and sending to {RECIPIENT_EMAIL}...")
-    html    = build_html_email(date_display, summaries)
+    html    = build_html_email(date_display, summaries, leaders=leaders)
     subject = f"⚾ Baseball Digest — {date_display} ({len(games)} games)"
     save_html_locally(html, date_str, date_display)
     try:
