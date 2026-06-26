@@ -258,7 +258,7 @@ def extract_player_notes(box_data, away_name, home_name, away_score=0, home_scor
                 rbi = int(b.get("rbi") or 0)
                 r   = int(b.get("r")   or 0)
                 h   = int(b.get("h")   or 0)
-                ab  = b.get("ab", "?")
+                ab  = b.get("ab")
                 d   = int(b.get("doubles") or b.get("d") or 0)
                 t   = int(b.get("triples") or b.get("t") or 0)
                 sb  = int(b.get("sb")  or 0)
@@ -267,6 +267,7 @@ def extract_player_notes(box_data, away_name, home_name, away_score=0, home_scor
                 if not (hr > 0 or rbi >= rbi_threshold or h >= 3 or t > 0 or r >= 2):
                     continue
 
+                hit_str = f"{h}-{ab}" if ab is not None else f"{h} H"
                 extras = []
                 if hr > 0:               extras.append(f"{hr} HR")
                 if d > 0:                extras.append(f"{d} 2B")
@@ -277,9 +278,9 @@ def extract_player_notes(box_data, away_name, home_name, away_score=0, home_scor
                 if sb > 0:               extras.append(f"{sb} SB")
 
                 if extras:
-                    lines.append(f"[{team}] Batter {name}: {h}/{ab}, {', '.join(extras)}")
+                    lines.append(f"[{team}] Batter {name}: {hit_str}, {', '.join(extras)}")
                 else:
-                    lines.append(f"[{team}] Batter {name}: {h}/{ab} (multi-hit)")
+                    lines.append(f"[{team}] Batter {name}: {hit_str} (multi-hit)")
     except Exception:
         pass
 
@@ -358,7 +359,7 @@ def extract_display_stats(box_data, game):
             hr  = int(b.get('hr')  or 0)
             rbi = int(b.get('rbi') or 0)
             h   = int(b.get('h')   or 0)
-            ab  = b.get('ab', '?')
+            ab  = b.get('ab')
             d   = int(b.get('doubles') or b.get('d') or 0)
             t   = int(b.get('triples') or b.get('t') or 0)
             sb  = int(b.get('sb')  or 0)
