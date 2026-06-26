@@ -1025,7 +1025,7 @@ def render_game_card(gs, gotd_label=None):
         )
 
     return (
-        f'<div class="card" style="border-left:4px solid {team_color};overflow:hidden;">'
+        f'<div class="card" style="border-left:4px solid {team_color};overflow:hidden;" data-wc="{team_color}">'
         + gotd_strip
         + '<table width="100%" cellpadding="0" cellspacing="0"><tr>'
         f'<td class="mu">'
@@ -1218,8 +1218,9 @@ html,body{min-height:100%;background:#f0f4f8;font-family:'Inter',-apple-system,s
 #dw .pn{font-size:22px}
 /* darker, bolder dash between scores */
 #dw .ps{color:#0f172a;font-weight:800}
-/* card hover lift — overflow:hidden clips gotd strip to card's border-radius */
-#dw .card{transition:transform .15s,box-shadow .15s;cursor:default;overflow:hidden}
+/* card entrance animation + hover lift */
+@keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+#dw .card{transition:transform .15s,box-shadow .15s;cursor:default;overflow:hidden;animation:cardIn .35s ease both}
 #dw .card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
 /* hide the digest's own header/footer — replaced by site nav */
 #dw .hdr,#dw .ft{display:none}
@@ -1250,6 +1251,10 @@ function styleContent(){
     el.innerHTML=el.innerHTML
       .replace(/^RECAP:\\s*/i,'')
       .replace(/<br>\\s*KEY PLAYERS:\\s*<br>/i,'<div class="kp-hdr">Key Players</div>');
+  });
+  document.querySelectorAll('#dw .card[data-wc]').forEach(function(card,i){
+    card.style.background='linear-gradient(135deg,'+card.getAttribute('data-wc')+'20 0%,#fff 45%)';
+    card.style.animationDelay=(i*50)+'ms';
   });
 }
 function updateNav(){
