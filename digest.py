@@ -350,8 +350,8 @@ def extract_display_stats(box_data, game):
 
     # Top batter: weighted HR > RBI > hits — winning team only
     try:
-        away_sc = int(game.get('away_score_val', 0) or 0)
-        home_sc = int(game.get('home_score_val', 0) or 0)
+        away_sc = int(game.get('away_score', 0) or 0)
+        home_sc = int(game.get('home_score', 0) or 0)
         winning_team = home_name if home_sc > away_sc else away_name
     except (ValueError, TypeError):
         winning_team = None
@@ -373,7 +373,7 @@ def extract_display_stats(box_data, game):
             d   = int(b.get('doubles') or b.get('d') or 0)
             t   = int(b.get('triples') or b.get('t') or 0)
             sb  = int(b.get('sb')  or 0)
-            if not (hr > 0 or rbi >= 2 or h >= 3):
+            if not (hr > 0 or rbi >= 1 or h >= 2):
                 continue
             score = hr * 10 + rbi * 3 + h
             if score > best_score:
