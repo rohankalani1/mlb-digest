@@ -1135,7 +1135,7 @@ def get_stat_leaders(year):
         import requests as _req
         resp = _req.get(
             'https://statsapi.mlb.com/api/v1/stats/leaders',
-            params={'leaderCategories': cat_str, 'season': year, 'limit': 1},
+            params={'leaderCategories': cat_str, 'season': year, 'limit': 3},
             timeout=10,
         )
         resp.raise_for_status()
@@ -1147,13 +1147,16 @@ def get_stat_leaders(year):
             if (top_list and api_cat in label_map
                     and api_cat not in found
                     and sg == group_map[api_cat]):
-                top       = top_list[0]
-                name      = top.get('person', {}).get('fullName', '')
-                last      = name.split()[-1] if name else ''
-                team_name = top.get('team', {}).get('name', '')
-                team      = TEAM_ABBREVS.get(team_name, team_name[:3].upper())
-                val       = top.get('value', '')
-                found[api_cat] = (label_map[api_cat], last, team, val)
+                rows = []
+                _SUFFIXES = {'Jr.', 'Sr.', 'II', 'III', 'IV', 'V'}
+                for entry in top_list[:3]:
+                    name  = entry.get('person', {}).get('fullName', '')
+                    parts = [p for p in name.split() if p not in _SUFFIXES]
+                    last  = parts[-1] if parts else ''
+                    team_name = entry.get('team', {}).get('name', '')
+                    team      = TEAM_ABBREVS.get(team_name, team_name[:3].upper())
+                    rows.append((last, team, entry.get('value', '')))
+                found[api_cat] = (label_map[api_cat], rows)
     except Exception as e:
         print(f"  [warn] Could not fetch stat leaders: {e}")
     return [found[c] for c, _, _ in ordered if c in found]
@@ -1162,18 +1165,28 @@ def get_stat_leaders(year):
 def render_leaders_html(leaders):
     if not leaders:
         return ''
-    items = ''.join(
-        f'<div class="ldr">'
-        f'<span class="ldr-cat">{lbl}</span>'
-        f'<span class="ldr-nm">{nm} <span class="ldr-tm">{tm}</span></span>'
-        f'<span class="ldr-vl">{vl}</span>'
-        f'</div>'
-        for lbl, nm, tm, vl in leaders
-    )
+    cols = ''
+    for lbl, rows in leaders:
+        rows_html = ''
+        for i, (nm, tm, vl) in enumerate(rows):
+            rank_cls = ' ldr-r1' if i == 0 else ''
+            rows_html += (
+                f'<div class="ldr-row{rank_cls}">'
+                f'<span class="ldr-rnk">{i+1}</span>'
+                f'<span class="ldr-nm">{nm} <span class="ldr-tm">{tm}</span></span>'
+                f'<span class="ldr-vl">{vl}</span>'
+                f'</div>'
+            )
+        cols += (
+            f'<div class="ldr-col">'
+            f'<div class="ldr-cat">{lbl}</div>'
+            f'{rows_html}'
+            f'</div>'
+        )
     return (
         '<div class="ldrs">'
         '<div class="ldrs-hdr">League Leaders</div>'
-        f'<div class="ldrs-grid">{items}</div>'
+        f'<div class="ldrs-grid">{cols}</div>'
         '</div>'
     )
 
@@ -1218,12 +1231,15 @@ def build_html_email(date_display, game_summaries, leaders=None, standings=None)
     leaders_css = (
         '.ldrs{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 20px;margin-bottom:18px}'
         ".ldrs-hdr{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin-bottom:10px}"
-        '.ldrs-grid{display:flex;flex-wrap:wrap;gap:6px}'
-        ".ldr{display:flex;align-items:center;gap:5px;background:#f8fafc;border-radius:6px;padding:5px 10px;flex:1;min-width:120px}"
-        '.ldr-cat{font-size:10px;font-weight:700;color:#1e40af;font-family:monospace;min-width:32px}'
-        ".ldr-nm{font-size:12px;font-weight:600;color:#1e293b;flex:1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
-        '.ldr-tm{font-size:10px;font-weight:400;color:#94a3b8}'
-        ".ldr-vl{font-size:13px;font-weight:800;color:#1e293b;font-family:'Courier New',monospace}"
+        '.ldrs-grid{display:flex;flex-wrap:wrap;gap:8px}'
+        '.ldr-col{background:#f8fafc;border-radius:8px;padding:8px 10px;flex:1;min-width:110px}'
+        ".ldr-cat{font-size:10px;font-weight:700;color:#1e40af;font-family:monospace;margin-bottom:5px}"
+        '.ldr-row{display:flex;align-items:center;gap:4px;padding:2px 0}'
+        '.ldr-r1 .ldr-nm{font-weight:700;color:#1e293b}'
+        '.ldr-rnk{font-size:9px;font-weight:600;color:#cbd5e1;min-width:10px}'
+        ".ldr-nm{font-size:11px;font-weight:500;color:#475569;flex:1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}"
+        '.ldr-tm{font-size:9px;font-weight:400;color:#94a3b8}'
+        ".ldr-vl{font-size:11px;font-weight:800;color:#1e293b;font-family:'Courier New',monospace;white-space:nowrap}"
     ) if leaders else ''
     leaders_html = render_leaders_html(leaders) if leaders else ''
 
