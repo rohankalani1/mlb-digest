@@ -238,8 +238,9 @@ def extract_player_notes(box_data, away_name, home_name, away_score=0, home_scor
                 except (ValueError, IndexError):
                     pass
 
+                bb   = p.get("bb", "?")
                 role = "Starting Pitcher" if is_starter else "Relief Pitcher"
-                lines.append(f"[{team}] {role} {name}{decision_label}{qs_flag}: {ip} IP, {er} ER, {k} K")
+                lines.append(f"[{team}] {role} {name}{decision_label}{qs_flag}: {ip} IP, {er} ER, {k} K, {bb} BB")
     except Exception:
         pass
 
@@ -347,9 +348,18 @@ def extract_display_stats(box_data, game):
                     'ip': ip, 'er': er, 'k': k, 'qs': qs,
                 })
 
-    # Top batter: weighted HR > RBI > hits
+    # Top batter: weighted HR > RBI > hits — winning team only
+    try:
+        away_sc = int(game.get('away_score_val', 0) or 0)
+        home_sc = int(game.get('home_score_val', 0) or 0)
+        winning_team = home_name if home_sc > away_sc else away_name
+    except (ValueError, TypeError):
+        winning_team = None
+
     best_score = 0
     for side, team in (('awayBatters', away_name), ('homeBatters', home_name)):
+        if winning_team and team != winning_team:
+            continue
         for b in box_data.get(side, []):
             if not b.get('personId'):
                 continue
@@ -676,9 +686,9 @@ Write a recap using ONLY the information provided below.
 
 RULES — follow exactly:
 - KEY PLAYERS bullets: ONLY use players whose names appear in the Stats section. Do not add others.
-- Always include a KEY PLAYERS bullet for EACH player labelled "Starting Pitcher" in the Stats section, regardless of how good or bad their outing was.
+- MANDATORY: Always include a KEY PLAYERS bullet for EACH player labelled "Starting Pitcher" — both starters must appear, no exceptions, regardless of their outing.
 - For batters, only include players who made a meaningful impact: HR, 2+ RBI (or 1 RBI in a low-scoring game), 3+ hits, a triple, or 2+ runs scored. A single double or a 1-hit game with no other production does not qualify.
-- Aim for no more than 5 KEY PLAYERS bullets total — prioritise the players who most decided the game.
+- Limit batter bullets to 3 maximum. The two starting pitcher bullets are always required and do not count toward this limit.
 - RECAP narrative: you may also reference pitcher decisions by name (from Pitcher decisions above) if it meaningfully adds context — but only when it naturally fits. Do not force it.
 - If team trend data is shown, you may reference it naturally in the RECAP — but only when it genuinely adds context. Do not force it.
 - If Key moments are listed, you may reference them naturally in the RECAP only — do not let them influence KEY PLAYERS in any way. They are factual (batter, event, inning, RBI count). Do not embellish beyond what is stated.
@@ -701,7 +711,7 @@ KEY PLAYERS:
 
 Stat line format rules — follow exactly, no deviations:
 - Batters: H-AB[, HR][, 2B][, 3B][, RBI][, R][, BB][, SB] — use only stats present, in that order, no extra words
-- Pitchers: IP IP, ER ER, K K — use only stats present, in that order, no extra words
+- Pitchers: X IP, X ER, X K, X BB — always include all four, in that order, no extra words
 - Never use verbs like "hit", "went", "recorded" in the stat line — numbers only
 - No commentary or phrases after the stat line"""
 
@@ -1271,7 +1281,7 @@ def build_html_email(date_display, game_summaries, leaders=None, standings=None)
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-body{{margin:0;padding:0;background:#f1f5f9}}.wrap{{max-width:660px;margin:0 auto;padding:28px 16px 48px}}.hdr{{background:linear-gradient(135deg,#1e3a5f 0%,#1e40af 100%);border-radius:12px 12px 0 0;padding:30px 32px;text-align:center}}.hdr h1{{margin:0 0 4px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:22px;font-weight:800;color:#fff;letter-spacing:-.3px}}.hdr p{{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:#93c5fd}}.body{{background:#f8fafc;padding:24px 24px 8px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px}}.ft{{text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;color:#94a3b8;margin-top:20px}}.bn{{background:linear-gradient(135deg,#0f3460 0%,#1e40af 100%);border-radius:8px;padding:14px 20px;margin-bottom:20px}}.bn-l{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:10px;font-weight:700;color:#93c5fd;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}}.bn-d{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;font-weight:600;color:#fff}}.card{{background:#fff;border-top:1px solid #e2e8f0;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;border-radius:10px;padding:18px 20px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.06)}}.mu{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;vertical-align:middle}}.tw{{font-weight:700;color:#1e293b}}.tl{{font-weight:400;color:#94a3b8}}.ts{{color:#cbd5e1;font-weight:300;margin:0 6px}}.lg{{width:22px;height:22px;vertical-align:middle;margin-right:5px}}.pl{{display:inline-block;background:#0f172a;border-radius:6px;padding:5px 14px;white-space:nowrap}}.pn{{font-family:'Courier New',monospace;font-size:19px;font-weight:800}}.ps{{font-family:'Courier New',monospace;font-size:14px;color:#334155;margin:0 6px}}.pr{{font-size:13.5px;color:#374151;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:8px 0 0;margin-top:2px;border-top:1px solid #f1f5f9}}.sc{{font-size:11px;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:3px 0 2px}}.rc{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13.5px;color:#374151;line-height:1.7;margin-top:12px}}.bdg{{font-size:10px;font-family:monospace;border-radius:3px;padding:1px 6px}}.bw{{background:#fef9c3;color:#854d0e;border:1px solid #fde047;margin-left:8px}}.bi{{background:#fef9c3;color:#854d0e;border:1px solid #fde047;margin-left:6px}}.bg{{background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;margin-left:6px}}.bm{{background:#f5f3ff;color:#6d28d9;border:1px solid #c4b5fd;margin-left:6px}}.bp{{background:#fdf4ff;color:#9333ea;border:1px solid #e9d5ff;margin-left:6px}}.sw{{font-size:10px;font-family:monospace;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:3px;padding:1px 6px}}.sl{{font-size:10px;font-family:monospace;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:3px;padding:1px 6px}}.qs{{font-size:10px;background:#dbeafe;color:#1d4ed8;border-radius:2px;padding:0 4px;margin-left:3px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}}.lw{{margin-top:8px;padding-top:6px;border-top:1px solid #f1f5f9;overflow-x:auto}}.lt{{border-collapse:collapse}}.ll{{padding:1px 8px 1px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;font-weight:600;color:#64748b;white-space:nowrap}}.lh{{padding:1px 5px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#94a3b8}}.l0{{padding:1px 5px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#cbd5e1}}.l1{{padding:1px 5px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#1e293b;font-weight:600}}.lr{{padding:1px 5px 1px 8px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#1e293b;font-weight:700;border-left:1px solid #e2e8f0}}.lrh{{padding:1px 5px 1px 8px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#94a3b8;border-left:1px solid #e2e8f0}}
+body{{margin:0;padding:0;background:#f1f5f9}}.wrap{{max-width:660px;margin:0 auto;padding:28px 16px 48px}}.hdr{{background:linear-gradient(135deg,#1e3a5f 0%,#1e40af 100%);border-radius:12px 12px 0 0;padding:30px 32px;text-align:center}}.hdr h1{{margin:0 0 4px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:22px;font-weight:800;color:#fff;letter-spacing:-.3px}}.hdr p{{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:#93c5fd}}.body{{background:#f8fafc;padding:24px 24px 8px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px}}.ft{{text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;color:#94a3b8;margin-top:20px}}.bn{{background:linear-gradient(135deg,#0f3460 0%,#1e40af 100%);border-radius:8px;padding:14px 20px;margin-bottom:20px}}.bn-l{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:10px;font-weight:700;color:#93c5fd;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}}.bn-d{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;font-weight:600;color:#fff}}.card{{background:#fff;border-top:1px solid #e2e8f0;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;border-radius:10px;padding:18px 20px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.06)}}.mu{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;vertical-align:middle}}.tw{{font-weight:700;color:#1e293b}}.tl{{font-weight:400;color:#64748b}}.ts{{color:#cbd5e1;font-weight:300;margin:0 6px}}.lg{{width:22px;height:22px;vertical-align:middle;margin-right:5px}}.pl{{display:inline-block;background:#0f172a;border-radius:6px;padding:5px 14px;white-space:nowrap}}.pn{{font-family:'Courier New',monospace;font-size:19px;font-weight:800}}.ps{{font-family:'Courier New',monospace;font-size:14px;color:#334155;margin:0 6px}}.pr{{font-size:13.5px;color:#374151;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:8px 0 0;margin-top:2px;border-top:1px solid #f1f5f9}}.sc{{font-size:11px;color:#64748b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:3px 0 2px}}.rc{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13.5px;color:#374151;line-height:1.7;margin-top:12px}}.bdg{{font-size:10px;font-family:monospace;border-radius:3px;padding:1px 6px}}.bw{{background:#fef9c3;color:#854d0e;border:1px solid #fde047;margin-left:8px}}.bi{{background:#fef9c3;color:#854d0e;border:1px solid #fde047;margin-left:6px}}.bg{{background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;margin-left:6px}}.bm{{background:#f5f3ff;color:#6d28d9;border:1px solid #c4b5fd;margin-left:6px}}.bp{{background:#fdf4ff;color:#9333ea;border:1px solid #e9d5ff;margin-left:6px}}.sw{{font-size:10px;font-family:monospace;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:3px;padding:1px 6px}}.sl{{font-size:10px;font-family:monospace;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:3px;padding:1px 6px}}.qs{{font-size:10px;background:#dbeafe;color:#1d4ed8;border-radius:2px;padding:0 4px;margin-left:3px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}}.lw{{margin-top:8px;padding-top:6px;border-top:1px solid #f1f5f9;overflow-x:auto}}.lt{{border-collapse:collapse}}.ll{{padding:1px 8px 1px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;font-weight:600;color:#64748b;white-space:nowrap}}.lh{{padding:1px 5px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#94a3b8}}.l0{{padding:1px 5px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#94a3b8}}.l1{{padding:1px 5px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#1e293b;font-weight:600}}.lr{{padding:1px 5px 1px 8px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#1e293b;font-weight:700;border-left:1px solid #e2e8f0}}.lrh{{padding:1px 5px 1px 8px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#94a3b8;border-left:1px solid #e2e8f0}}
 {leaders_css}
 {standings_css}
   </style>
