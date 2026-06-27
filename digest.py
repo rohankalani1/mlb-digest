@@ -1116,37 +1116,47 @@ def render_standings_html(standings):
 
 def get_stat_leaders(year):
     """Fetch the #1 leader for each key hitting and pitching stat."""
+    # (api_category, display_label, expected_statGroup)
+    # API returns 'runsBattedIn' (not 'rbi'); statGroup filters out wrong contexts.
     ordered = [
-        ('homeRuns',                     'HR'),
-        ('battingAverage',               'AVG'),
-        ('rbi',                          'RBI'),
-        ('stolenBases',                  'SB'),
-        ('earnedRunAverage',             'ERA'),
-        ('strikeouts',                   'K'),
-        ('walksAndHitsPerInningPitched', 'WHIP'),
+        ('homeRuns',                     'HR',   'hitting'),
+        ('battingAverage',               'AVG',  'hitting'),
+        ('runsBattedIn',                 'RBI',  'hitting'),
+        ('stolenBases',                  'SB',   'hitting'),
+        ('earnedRunAverage',             'ERA',  'pitching'),
+        ('strikeouts',                   'K',    'pitching'),
+        ('walksAndHitsPerInningPitched', 'WHIP', 'pitching'),
     ]
     cat_str   = ','.join(c[0] for c in ordered)
     label_map = {c[0]: c[1] for c in ordered}
+    group_map = {c[0]: c[2] for c in ordered}
     found = {}
     try:
-        data = statsapi.get('stats/leaders', {
-            'leaderCategories': cat_str,
-            'season': year,
-            'limit': 1,
-        })
+        import requests as _req
+        resp = _req.get(
+            'https://statsapi.mlb.com/api/v1/stats/leaders',
+            params={'leaderCategories': cat_str, 'season': year, 'limit': 1},
+            timeout=10,
+        )
+        resp.raise_for_status()
+        data = resp.json()
         for group in data.get('leagueLeaders', []):
             api_cat  = group.get('leaderCategory', '')
+            sg       = group.get('statGroup', '')
             top_list = group.get('leaders', [])
-            if top_list and api_cat in label_map:
-                top  = top_list[0]
-                name = top.get('person', {}).get('fullName', '')
-                last = name.split()[-1] if name else ''
-                team = top.get('team', {}).get('abbreviation', '')
-                val  = top.get('value', '')
+            if (top_list and api_cat in label_map
+                    and api_cat not in found
+                    and sg == group_map[api_cat]):
+                top       = top_list[0]
+                name      = top.get('person', {}).get('fullName', '')
+                last      = name.split()[-1] if name else ''
+                team_name = top.get('team', {}).get('name', '')
+                team      = TEAM_ABBREVS.get(team_name, team_name[:3].upper())
+                val       = top.get('value', '')
                 found[api_cat] = (label_map[api_cat], last, team, val)
     except Exception as e:
         print(f"  [warn] Could not fetch stat leaders: {e}")
-    return [found[c] for c, _ in ordered if c in found]
+    return [found[c] for c, _, _ in ordered if c in found]
 
 
 def render_leaders_html(leaders):
