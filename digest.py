@@ -1254,7 +1254,7 @@ def build_html_email(date_display, game_summaries, leaders=None, standings=None)
     leaders_html = render_leaders_html(leaders) if leaders else ''
 
     standings_css = (
-        '.stg-lg{margin-top:18px}'
+        '.stg-lg{margin:18px auto 0;max-width:860px}'
         ".stg-ttl{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
         '.stg-ttl.stg-al{color:#dc2626}'
         '.stg-ttl.stg-nl{color:#1e3a5f}'
@@ -1265,8 +1265,8 @@ def build_html_email(date_display, game_summaries, leaders=None, standings=None)
         ".stg-dh{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
         '.stg-tbl{border-collapse:collapse;width:100%}'
         ".stg-row td{padding:3px 0;font-size:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
-        '.stg-abbr{font-weight:600;color:#1e293b;white-space:nowrap}'
-        '.stg-wl{color:#64748b;white-space:nowrap;padding-left:6px}'
+        '.stg-abbr{font-weight:600;color:#1e293b;white-space:nowrap;width:44px}'
+        '.stg-wl{color:#64748b;white-space:nowrap;width:58px}'
         '.stg-gb{color:#94a3b8;text-align:right;white-space:nowrap}'
         '.stg-ldr .stg-abbr{font-weight:800}'
         '.stg-al .stg-ldr .stg-abbr{color:#dc2626}'
