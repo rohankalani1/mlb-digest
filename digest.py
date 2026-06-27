@@ -1081,8 +1081,8 @@ def render_standings_html(standings):
     if not standings or (not standings.get('AL') and not standings.get('NL')):
         return ''
 
-    def league_card(league, label, cls):
-        divs_html = ''
+    def league_section(league, label, cls):
+        cards_html = ''
         for div_short in ('East', 'Central', 'West'):
             teams = standings.get(league, {}).get(div_short, [])
             rows  = ''
@@ -1095,22 +1095,22 @@ def render_standings_html(standings):
                     f'<td class="stg-gb">{t["gb"]}</td>'
                     f'</tr>'
                 )
-            divs_html += (
-                f'<div class="stg-div">'
+            cards_html += (
+                f'<div class="stg-card {cls}">'
                 f'<div class="stg-dh">{league} {div_short}</div>'
                 f'<table class="stg-tbl">{rows}</table>'
                 f'</div>'
             )
         return (
-            f'<div class="stg {cls}">'
-            f'<div class="stg-ttl">{label}</div>'
-            f'<div class="stg-cols">{divs_html}</div>'
+            f'<div class="stg-lg">'
+            f'<div class="stg-ttl {cls}">{label}</div>'
+            f'<div class="stg-divs">{cards_html}</div>'
             f'</div>'
         )
 
     return (
-        league_card('AL', 'American League', 'stg-al')
-        + league_card('NL', 'National League', 'stg-nl')
+        league_section('AL', 'American League', 'stg-al')
+        + league_section('NL', 'National League', 'stg-nl')
     )
 
 
@@ -1244,21 +1244,19 @@ def build_html_email(date_display, game_summaries, leaders=None, standings=None)
     leaders_html = render_leaders_html(leaders) if leaders else ''
 
     standings_css = (
-        '.stg{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin-top:18px}'
-        '.stg-al{border-left:4px solid #dc2626}'
-        '.stg-nl{border-left:4px solid #1e3a5f}'
-        ".stg-ttl{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
-        '.stg-al .stg-ttl{color:#dc2626}'
-        '.stg-nl .stg-ttl{color:#1e3a5f}'
-        '.stg-cols{display:flex;gap:0;overflow-x:auto}'
-        '.stg-div{flex:1;min-width:90px;padding:0 12px;border-right:1px solid #f1f5f9}'
-        '.stg-div:first-child{padding-left:0}'
-        '.stg-div:last-child{padding-right:0;border-right:none}'
-        ".stg-dh{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
+        '.stg-lg{margin-top:18px}'
+        ".stg-ttl{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
+        '.stg-ttl.stg-al{color:#dc2626}'
+        '.stg-ttl.stg-nl{color:#1e3a5f}'
+        '.stg-divs{display:flex;gap:10px;flex-wrap:wrap}'
+        '.stg-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;flex:1;min-width:160px}'
+        '.stg-card.stg-al{border-top:3px solid #dc2626}'
+        '.stg-card.stg-nl{border-top:3px solid #1e3a5f}'
+        ".stg-dh{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
         '.stg-tbl{border-collapse:collapse;width:100%}'
-        ".stg-row td{padding:2px 3px;font-size:11px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
+        ".stg-row td{padding:3px 0;font-size:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
         '.stg-abbr{font-weight:600;color:#1e293b;white-space:nowrap}'
-        '.stg-wl{color:#64748b;white-space:nowrap;padding-left:4px}'
+        '.stg-wl{color:#64748b;white-space:nowrap;padding-left:6px}'
         '.stg-gb{color:#94a3b8;text-align:right;white-space:nowrap}'
         '.stg-ldr .stg-abbr{font-weight:800}'
         '.stg-al .stg-ldr .stg-abbr{color:#dc2626}'
@@ -1424,9 +1422,8 @@ html,body{background:#eef2f8}
 /* leaders card on dark background */
 #dw .ldrs{animation:cardIn .35s ease both;border-left:4px solid #1e40af}
 #dw .ldr{background:#f0f4f8}
-/* standings cards on dark background */
-#dw .stg{animation:cardIn .35s ease both}
-#dw .stg-div{border-right-color:#e2e8f0}
+/* standings cards on site background */
+#dw .stg-card{animation:cardIn .35s ease both}
 /* key players section header */
 .kp-hdr{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-top:10px;border-top:1px solid #e2e8f0}
 /* larger linescore */
