@@ -349,12 +349,17 @@ def extract_display_stats(box_data, game):
                 })
 
     # Top batter: weighted HR > RBI > hits — winning team only
+    # Thresholds must match extract_player_notes so the chosen player
+    # actually appears in the LLM KEY PLAYERS section to be bolded.
     try:
         away_sc = int(game.get('away_score', 0) or 0)
         home_sc = int(game.get('home_score', 0) or 0)
-        winning_team = home_name if home_sc > away_sc else away_name
+        winning_team  = home_name if home_sc > away_sc else away_name
+        total_runs    = away_sc + home_sc
+        rbi_threshold = 1 if total_runs <= 3 else 2
     except (ValueError, TypeError):
-        winning_team = None
+        winning_team  = None
+        rbi_threshold = 2
 
     best_score = 0
     for side, team in (('awayBatters', away_name), ('homeBatters', home_name)):
@@ -369,11 +374,12 @@ def extract_display_stats(box_data, game):
             hr  = int(b.get('hr')  or 0)
             rbi = int(b.get('rbi') or 0)
             h   = int(b.get('h')   or 0)
+            r   = int(b.get('r')   or 0)
             ab  = b.get('ab')
             d   = int(b.get('doubles') or b.get('d') or 0)
             t   = int(b.get('triples') or b.get('t') or 0)
             sb  = int(b.get('sb')  or 0)
-            if not (hr > 0 or rbi >= 1 or h >= 2):
+            if not (hr > 0 or rbi >= rbi_threshold or h >= 3 or t > 0 or r >= 2):
                 continue
             score = hr * 10 + rbi * 3 + h
             if score > best_score:
@@ -991,8 +997,8 @@ def render_game_card(gs, gotd_label=None):
     for flag_type, flag_text in gs.get('milestones', {}).get('player_flags', []):
         game_badges += f'<span class="bdg bp">{flag_text}</span>'
 
-    away_pip_color = '#4ade80' if away_won else '#f87171'
-    home_pip_color = '#4ade80' if not away_won else '#f87171'
+    away_pip_color = '#ffffff' if away_won else '#93c5fd'
+    home_pip_color = '#ffffff' if not away_won else '#93c5fd'
     score_pill = (
         f'<span class="pl">'
         f'<span class="pn" style="color:{away_pip_color};">{away_score}</span>'
@@ -1281,7 +1287,7 @@ def build_html_email(date_display, game_summaries, leaders=None, standings=None)
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-body{{margin:0;padding:0;background:#f1f5f9}}.wrap{{max-width:660px;margin:0 auto;padding:28px 16px 48px}}.hdr{{background:linear-gradient(135deg,#1e3a5f 0%,#1e40af 100%);border-radius:12px 12px 0 0;padding:30px 32px;text-align:center}}.hdr h1{{margin:0 0 4px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:22px;font-weight:800;color:#fff;letter-spacing:-.3px}}.hdr p{{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:#93c5fd}}.body{{background:#f8fafc;padding:24px 24px 8px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px}}.ft{{text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;color:#94a3b8;margin-top:20px}}.bn{{background:linear-gradient(135deg,#0f3460 0%,#1e40af 100%);border-radius:8px;padding:14px 20px;margin-bottom:20px}}.bn-l{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:10px;font-weight:700;color:#93c5fd;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}}.bn-d{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;font-weight:600;color:#fff}}.card{{background:#fff;border-top:1px solid #e2e8f0;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;border-radius:10px;padding:18px 20px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.06)}}.mu{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;vertical-align:middle}}.tw{{font-weight:700;color:#1e293b}}.tl{{font-weight:400;color:#64748b}}.ts{{color:#cbd5e1;font-weight:300;margin:0 6px}}.lg{{width:22px;height:22px;vertical-align:middle;margin-right:5px}}.pl{{display:inline-block;background:#0f172a;border-radius:6px;padding:5px 14px;white-space:nowrap}}.pn{{font-family:'Courier New',monospace;font-size:19px;font-weight:800}}.ps{{font-family:'Courier New',monospace;font-size:14px;color:#334155;margin:0 6px}}.pr{{font-size:13.5px;color:#374151;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:8px 0 0;margin-top:2px;border-top:1px solid #f1f5f9}}.sc{{font-size:11px;color:#64748b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:3px 0 2px}}.rc{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13.5px;color:#374151;line-height:1.7;margin-top:12px}}.bdg{{font-size:10px;font-family:monospace;border-radius:3px;padding:1px 6px}}.bw{{background:#fef9c3;color:#854d0e;border:1px solid #fde047;margin-left:8px}}.bi{{background:#fef9c3;color:#854d0e;border:1px solid #fde047;margin-left:6px}}.bg{{background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;margin-left:6px}}.bm{{background:#f5f3ff;color:#6d28d9;border:1px solid #c4b5fd;margin-left:6px}}.bp{{background:#fdf4ff;color:#9333ea;border:1px solid #e9d5ff;margin-left:6px}}.sw{{font-size:10px;font-family:monospace;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:3px;padding:1px 6px}}.sl{{font-size:10px;font-family:monospace;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:3px;padding:1px 6px}}.qs{{font-size:10px;background:#dbeafe;color:#1d4ed8;border-radius:2px;padding:0 4px;margin-left:3px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}}.lw{{margin-top:8px;padding-top:6px;border-top:1px solid #f1f5f9;overflow-x:auto}}.lt{{border-collapse:collapse}}.ll{{padding:1px 8px 1px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;font-weight:600;color:#64748b;white-space:nowrap}}.lh{{padding:1px 5px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#94a3b8}}.l0{{padding:1px 5px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#94a3b8}}.l1{{padding:1px 5px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#1e293b;font-weight:600}}.lr{{padding:1px 5px 1px 8px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#1e293b;font-weight:700;border-left:1px solid #e2e8f0}}.lrh{{padding:1px 5px 1px 8px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#94a3b8;border-left:1px solid #e2e8f0}}
+body{{margin:0;padding:0;background:#f1f5f9}}.wrap{{max-width:660px;margin:0 auto;padding:28px 16px 48px}}.hdr{{background:linear-gradient(135deg,#1e3a5f 0%,#1e40af 100%);border-radius:12px 12px 0 0;padding:30px 32px;text-align:center}}.hdr h1{{margin:0 0 4px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:22px;font-weight:800;color:#fff;letter-spacing:-.3px}}.hdr p{{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:#93c5fd}}.body{{background:#f8fafc;padding:24px 24px 8px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px}}.ft{{text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;color:#94a3b8;margin-top:20px}}.bn{{background:linear-gradient(135deg,#0f3460 0%,#1e40af 100%);border-radius:8px;padding:14px 20px;margin-bottom:20px}}.bn-l{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:10px;font-weight:700;color:#93c5fd;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}}.bn-d{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;font-weight:600;color:#fff}}.card{{background:#fff;border-top:1px solid #e2e8f0;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;border-radius:10px;padding:18px 20px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.06)}}.mu{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;vertical-align:middle}}.tw{{font-weight:700;color:#1e293b}}.tl{{font-weight:400;color:#64748b}}.ts{{color:#cbd5e1;font-weight:300;margin:0 6px}}.lg{{width:22px;height:22px;vertical-align:middle;margin-right:5px}}.pl{{display:inline-block;background:linear-gradient(135deg,#1e3a5f 0%,#1e40af 100%);border-radius:6px;padding:5px 14px;white-space:nowrap}}.pn{{font-family:'Courier New',monospace;font-size:19px;font-weight:800}}.ps{{font-family:'Courier New',monospace;font-size:14px;color:#93c5fd;margin:0 6px}}.pr{{font-size:13.5px;color:#374151;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:8px 0 0;margin-top:2px;border-top:1px solid #f1f5f9}}.sc{{font-size:11px;color:#64748b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:3px 0 2px}}.rc{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13.5px;color:#374151;line-height:1.7;margin-top:12px}}.bdg{{font-size:10px;font-family:monospace;border-radius:3px;padding:1px 6px}}.bw{{background:#fef9c3;color:#854d0e;border:1px solid #fde047;margin-left:8px}}.bi{{background:#fef9c3;color:#854d0e;border:1px solid #fde047;margin-left:6px}}.bg{{background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;margin-left:6px}}.bm{{background:#f5f3ff;color:#6d28d9;border:1px solid #c4b5fd;margin-left:6px}}.bp{{background:#fdf4ff;color:#9333ea;border:1px solid #e9d5ff;margin-left:6px}}.sw{{font-size:10px;font-family:monospace;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:3px;padding:1px 6px}}.sl{{font-size:10px;font-family:monospace;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:3px;padding:1px 6px}}.qs{{font-size:10px;background:#dbeafe;color:#1d4ed8;border-radius:2px;padding:0 4px;margin-left:3px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}}.lw{{margin-top:8px;padding-top:6px;border-top:1px solid #f1f5f9;overflow-x:auto}}.lt{{border-collapse:collapse}}.ll{{padding:1px 8px 1px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;font-weight:600;color:#64748b;white-space:nowrap}}.lh{{padding:1px 5px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#94a3b8}}.l0{{padding:1px 5px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#94a3b8}}.l1{{padding:1px 5px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#1e293b;font-weight:600}}.lr{{padding:1px 5px 1px 8px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#1e293b;font-weight:700;border-left:1px solid #e2e8f0}}.lrh{{padding:1px 5px 1px 8px;text-align:center;font-family:'Courier New',monospace;font-size:11px;color:#94a3b8;border-left:1px solid #e2e8f0}}
 {leaders_css}
 {standings_css}
   </style>
@@ -1415,10 +1421,9 @@ html,body{min-height:100%;font-family:'Inter',-apple-system,sans-serif;overflow-
 
     override_css = """\
 /* larger score pill */
-#dw .pl{padding:7px 18px;background:#1e40af}
+#dw .pl{padding:7px 18px;background:linear-gradient(135deg,#1e3a5f 0%,#1e40af 100%)}
 #dw .pn{font-size:22px}
-/* darker, bolder dash between scores */
-#dw .ps{color:#0f172a;font-weight:800}
+#dw .ps{color:#93c5fd;font-weight:800}
 /* page background — must be after digest_css to override body{background:#f1f5f9} */
 html,body{background:#eef2f8}
 /* card entrance animation + hover lift */
