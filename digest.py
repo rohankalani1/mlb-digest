@@ -1269,11 +1269,11 @@ def build_html_email(date_display, game_summaries, leaders=None, standings=None)
         '.stg-card.stg-al{border-top:3px solid #dc2626}'
         '.stg-card.stg-nl{border-top:3px solid #1e3a5f}'
         ".stg-dh{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
-        '.stg-tbl{border-collapse:collapse;width:100%}'
+        '.stg-tbl{border-collapse:collapse}'
         ".stg-row td{padding:3px 0;font-size:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
         '.stg-abbr{font-weight:600;color:#1e293b;white-space:nowrap;width:44px}'
-        '.stg-wl{color:#64748b;white-space:nowrap;width:58px}'
-        '.stg-gb{color:#94a3b8;text-align:right;white-space:nowrap}'
+        '.stg-wl{color:#64748b;white-space:nowrap;width:58px;padding-right:10px}'
+        '.stg-gb{color:#94a3b8;white-space:nowrap}'
         '.stg-ldr .stg-abbr{font-weight:800}'
         '.stg-al .stg-ldr .stg-abbr{color:#dc2626}'
         '.stg-nl .stg-ldr .stg-abbr{color:#1e3a5f}'
