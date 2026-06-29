@@ -1452,6 +1452,8 @@ html,body{background:#eef2f8}
 #dw .ldr{background:#f0f4f8}
 /* standings cards on site background */
 #dw .stg-card{animation:cardIn .35s ease both}
+/* fix GB column width for old digest files that have width:100% on stg-tbl */
+#dw .stg-tbl{width:auto}
 /* bottom row: standings left, leaders right */
 #dw .btm-row{display:flex;gap:24px;align-items:flex-start;max-width:1100px;margin:18px auto 0;flex-wrap:wrap}
 #dw .btm-stg{flex:2 1 480px;min-width:0}
@@ -1478,7 +1480,27 @@ html,body{background:#eef2f8}
 
     js_core = """\
 var idx=0;
+function restructureLayout(){
+  var dw=document.getElementById('dw');
+  if(!dw||dw.querySelector('.btm-row'))return;
+  var ldrs=dw.querySelector('.ldrs');
+  var stgLgs=dw.querySelectorAll('.stg-lg');
+  if(!ldrs&&!stgLgs.length)return;
+  var btmRow=document.createElement('div');
+  btmRow.className='btm-row';
+  var btmStg=document.createElement('div');
+  btmStg.className='btm-stg';
+  var btmLdr=document.createElement('div');
+  btmLdr.className='btm-ldr';
+  stgLgs.forEach(function(el){btmStg.appendChild(el);});
+  if(ldrs)btmLdr.appendChild(ldrs);
+  btmRow.appendChild(btmStg);
+  btmRow.appendChild(btmLdr);
+  var body=dw.querySelector('.body');
+  if(body)body.after(btmRow);else dw.appendChild(btmRow);
+}
 function styleContent(){
+  restructureLayout();
   document.querySelectorAll('#dw .rc').forEach(function(el){
     el.innerHTML=el.innerHTML
       .replace(/^RECAP:\\s*/i,'')
