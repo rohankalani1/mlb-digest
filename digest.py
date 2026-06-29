@@ -1245,6 +1245,7 @@ def build_html_email(date_display, game_summaries, leaders=None, standings=None)
         count_line   = f"{len(game_summaries)} game{'s' if len(game_summaries) != 1 else ''} played"
 
     leaders_css = (
+        '.btm-row{margin-top:18px}'
         '.ldrs{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 20px;margin-bottom:18px}'
         ".ldrs-hdr{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin-bottom:10px}"
         '.ldrs-grid{display:flex;flex-wrap:wrap;gap:8px}'
@@ -1281,6 +1282,15 @@ def build_html_email(date_display, game_summaries, leaders=None, standings=None)
     ) if standings else ''
     standings_html = render_standings_html(standings) if standings else ''
 
+    btm_html = ''
+    if standings_html or leaders_html:
+        btm_html = (
+            '<div class="btm-row">'
+            f'<div class="btm-stg">{standings_html}</div>'
+            f'<div class="btm-ldr">{leaders_html}</div>'
+            '</div>'
+        )
+
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1299,9 +1309,8 @@ body{{margin:0;padding:0;background:#f1f5f9}}.wrap{{max-width:660px;margin:0 aut
       <h1>Daily Baseball Digest</h1>
       <p>{date_display} &nbsp;&#183;&nbsp; {count_line}</p>
     </div>
-    {leaders_html}
     <div class="body">{body_content}</div>
-    {standings_html}
+    {btm_html}
     <p class="ft">Automated digest &nbsp;&#183;&nbsp; MLB Stats API + Groq AI &nbsp;&#183;&nbsp; Free tier</p>
   </div>
 </body>
@@ -1443,6 +1452,12 @@ html,body{background:#eef2f8}
 #dw .ldr{background:#f0f4f8}
 /* standings cards on site background */
 #dw .stg-card{animation:cardIn .35s ease both}
+/* bottom row: standings left, leaders right */
+#dw .btm-row{display:flex;gap:24px;align-items:flex-start;max-width:1100px;margin:18px auto 0;flex-wrap:wrap}
+#dw .btm-stg{flex:2 1 480px;min-width:0}
+#dw .btm-ldr{flex:1 1 260px;min-width:0}
+#dw .stg-lg{max-width:none;margin:0}
+#dw .stg-lg+.stg-lg{margin-top:16px}
 /* key players section header */
 .kp-hdr{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-top:10px;border-top:1px solid #e2e8f0}
 /* larger linescore */
