@@ -302,7 +302,7 @@ def extract_display_stats(box_data, game):
     top_batter = None
 
     if not box_data:
-        return pitchers, top_batter
+        return pitchers, top_batter, set()
 
     away_name = game['away_name']
     home_name = game['home_name']
@@ -361,7 +361,7 @@ def extract_display_stats(box_data, game):
         winning_team  = None
         rbi_threshold = 2
 
-    best_score = 0
+    batter_candidates = []
     for side, team in (('awayBatters', away_name), ('homeBatters', home_name)):
         if winning_team and team != winning_team:
             continue
@@ -381,15 +381,15 @@ def extract_display_stats(box_data, game):
             sb  = int(b.get('sb')  or 0)
             if not (hr > 0 or rbi >= rbi_threshold or h >= 3 or t > 0 or r >= 2):
                 continue
-            score = hr * 10 + rbi * 3 + h
-            if score > best_score:
-                best_score = score
-                top_batter = {
-                    'name': name, 'team': team,
-                    'h': h, 'ab': ab, 'hr': hr, 'rbi': rbi,
-                    'd': d, 't': t, 'sb': sb,
-                    'exceptional': hr >= 2 or rbi >= 4,
-                }
+            score = hr * 10 + rbi * 3 + h + t * 5
+            batter_candidates.append((score, {
+                'name': name, 'team': team,
+                'h': h, 'ab': ab, 'hr': hr, 'rbi': rbi,
+                'd': d, 't': t, 'sb': sb,
+                'exceptional': hr >= 2 or rbi >= 4,
+            }))
+    batter_candidates.sort(key=lambda x: x[0], reverse=True)
+    top_batter = [c for _, c in batter_candidates] or None
 
     # Collect last names of ALL QS-qualifying pitchers (including no-decision starters)
     qs_pitchers = set()
@@ -911,20 +911,27 @@ def render_summary_html(summary, pitchers, top_batter=None, qs_pitchers=None):
                         break
         summary = '\n'.join(lines)
 
-    # Bold the entire bullet for the top batter in KEY PLAYERS
-    if top_batter and top_batter.get('name'):
-        name = top_batter['name']
-        _SUFFIXES = {'Jr.', 'Sr.', 'II', 'III', 'IV', 'V'}
+    # Bold the entire bullet for the top batter in KEY PLAYERS.
+    # top_batter may be a list of candidates (ranked by score) or a single dict
+    # for backward compat. Try each candidate in order until one matches a bullet.
+    _SUFFIXES = {'Jr.', 'Sr.', 'II', 'III', 'IV', 'V'}
+    candidates = top_batter if isinstance(top_batter, list) else ([top_batter] if top_batter else [])
+    lines = summary.split('\n')
+    bolded = False
+    for candidate in candidates:
+        if bolded or not candidate or not candidate.get('name'):
+            break
+        name = candidate['name']
         parts = (name.split(',')[0].strip() if ',' in name else name).split()
         while len(parts) > 1 and parts[-1] in _SUFFIXES:
             parts.pop()
         batter_key = parts[-1]
-        lines = summary.split('\n')
         for i, line in enumerate(lines):
             if '•' in line and batter_key in line and '[BOLD]' not in line:
                 lines[i] = f'[BOLD]{line}[/BOLD]'
+                bolded = True
                 break
-        summary = '\n'.join(lines)
+    summary = '\n'.join(lines)
 
     qs_badge = '<span class="qs">QS</span>'
     escaped = (html.escape(summary)
