@@ -274,7 +274,7 @@ def extract_player_notes(box_data, away_name, home_name, away_score=0, home_scor
                 if d > 0:                extras.append(f"{d} 2B")
                 if t > 0:                extras.append(f"{t} 3B")
                 if rbi >= rbi_threshold: extras.append(f"{rbi} RBI")
-                if r >= 2:               extras.append(f"{r} R")
+                if r > 0:                extras.append(f"{r} R")
                 if bb > 0:               extras.append(f"{bb} BB")
                 if sb > 0:               extras.append(f"{sb} SB")
 
