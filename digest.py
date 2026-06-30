@@ -66,6 +66,24 @@ TEAM_ABBREVS = {
     'Toronto Blue Jays':     'TOR', 'Washington Nationals':  'WSH',
 }
 
+TEAM_IDS = {
+    'Arizona Diamondbacks':  109, 'Atlanta Braves':        144,
+    'Baltimore Orioles':     110, 'Boston Red Sox':        111,
+    'Chicago Cubs':          112, 'Chicago White Sox':     145,
+    'Cincinnati Reds':       113, 'Cleveland Guardians':   114,
+    'Colorado Rockies':      115, 'Detroit Tigers':        116,
+    'Houston Astros':        117, 'Kansas City Royals':    118,
+    'Los Angeles Angels':    108, 'Los Angeles Dodgers':   119,
+    'Miami Marlins':         146, 'Milwaukee Brewers':     158,
+    'Minnesota Twins':       142, 'New York Mets':         121,
+    'New York Yankees':      147, 'Athletics':             133,
+    'Philadelphia Phillies': 143, 'Pittsburgh Pirates':    134,
+    'San Diego Padres':      135, 'San Francisco Giants':  137,
+    'Seattle Mariners':      136, 'St. Louis Cardinals':   138,
+    'Tampa Bay Rays':        139, 'Texas Rangers':         140,
+    'Toronto Blue Jays':     141, 'Washington Nationals':  120,
+}
+
 TEAM_COLORS = {
     'Arizona Diamondbacks': '#A71930', 'Atlanta Braves':       '#CE1141',
     'Baltimore Orioles':    '#DF4601', 'Boston Red Sox':       '#BD3039',
@@ -1093,6 +1111,7 @@ def get_standings(year):
                 gb     = '—' if gb_raw in ('-', '0.0', '0', '') else gb_raw
                 teams.append({
                     'abbr':   abbr,
+                    'team_id': TEAM_IDS.get(name, ''),
                     'w':      t.get('w', 0),
                     'l':      t.get('l', 0),
                     'gb':     gb,
@@ -1115,17 +1134,20 @@ def render_standings_html(standings):
             rows  = ''
             for t in teams:
                 ldr_cls = ' stg-ldr' if t['leader'] else ''
+                tid = t.get('team_id', '')
+                logo = (f'<img src="https://www.mlbstatic.com/team-logos/{tid}.svg" '
+                        f'class="stg-lg" alt="">') if tid else ''
                 rows += (
-                    f'<tr class="stg-row{ldr_cls}">'
-                    f'<td class="stg-abbr">{t["abbr"]}</td>'
-                    f'<td class="stg-wl">{t["w"]}-{t["l"]}</td>'
-                    f'<td class="stg-gb">{t["gb"]}</td>'
-                    f'</tr>'
+                    f'<div class="stg-row{ldr_cls}">'
+                    f'<span class="stg-team">{logo}<span class="stg-abbr">{t["abbr"]}</span></span>'
+                    f'<span class="stg-wl">{t["w"]}-{t["l"]}</span>'
+                    f'<span class="stg-gb">{t["gb"]}</span>'
+                    f'</div>'
                 )
             cards_html += (
                 f'<div class="stg-card {cls}">'
                 f'<div class="stg-dh">{league} {div_short}</div>'
-                f'<table class="stg-tbl">{rows}</table>'
+                f'<div class="stg-tbl">{rows}</div>'
                 f'</div>'
             )
         return (
@@ -1282,11 +1304,12 @@ def build_html_email(date_display, game_summaries, leaders=None, standings=None)
         '.stg-card.stg-al{border-top:3px solid #dc2626}'
         '.stg-card.stg-nl{border-top:3px solid #1e3a5f}'
         ".stg-dh{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
-        '.stg-tbl{border-collapse:collapse;width:100%}'
-        ".stg-row td{padding:3px 0;font-size:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
-        '.stg-abbr{font-weight:600;color:#1e293b;white-space:nowrap;width:44px}'
-        '.stg-wl{color:#64748b;white-space:nowrap;width:58px;padding-right:10px}'
-        '.stg-gb{color:#94a3b8;white-space:nowrap;text-align:right}'
+        ".stg-row{display:flex;align-items:center;justify-content:space-between;padding:3px 0;font-size:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
+        '.stg-team{display:flex;align-items:center;gap:5px}'
+        '.stg-lg{width:16px;height:16px;object-fit:contain;flex-shrink:0}'
+        '.stg-abbr{font-weight:600;color:#1e293b;white-space:nowrap}'
+        '.stg-wl{color:#64748b;white-space:nowrap}'
+        '.stg-gb{color:#94a3b8;white-space:nowrap}'
         '.stg-ldr .stg-abbr{font-weight:800}'
         '.stg-al .stg-ldr .stg-abbr{color:#dc2626}'
         '.stg-nl .stg-ldr .stg-abbr{color:#1e3a5f}'
@@ -1464,9 +1487,11 @@ html,body{background:#eef2f8}
 #dw .ldr{background:#f0f4f8}
 /* standings cards on site background */
 #dw .stg-card{animation:cardIn .35s ease both}
-/* stretch standings table to fill card, GB right-aligned */
-#dw .stg-tbl{width:100%}
+/* old digest compat: keep table compact, GB right-aligned */
+#dw .stg-tbl{width:auto}
 #dw .stg-gb{text-align:right}
+/* new digest flex rows */
+#dw .stg-row{display:flex;align-items:center;justify-content:space-between}
 /* bottom row: standings left, leaders right */
 #dw .btm-row{display:flex;gap:24px;align-items:flex-start;max-width:1100px;margin:18px auto 0;flex-wrap:wrap}
 #dw .btm-stg{flex:2 1 480px;min-width:0}
