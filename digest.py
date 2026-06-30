@@ -1282,11 +1282,11 @@ def build_html_email(date_display, game_summaries, leaders=None, standings=None)
         '.stg-card.stg-al{border-top:3px solid #dc2626}'
         '.stg-card.stg-nl{border-top:3px solid #1e3a5f}'
         ".stg-dh{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
-        '.stg-tbl{border-collapse:collapse}'
+        '.stg-tbl{border-collapse:collapse;width:100%}'
         ".stg-row td{padding:3px 0;font-size:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
         '.stg-abbr{font-weight:600;color:#1e293b;white-space:nowrap;width:44px}'
         '.stg-wl{color:#64748b;white-space:nowrap;width:58px;padding-right:10px}'
-        '.stg-gb{color:#94a3b8;white-space:nowrap}'
+        '.stg-gb{color:#94a3b8;white-space:nowrap;text-align:right}'
         '.stg-ldr .stg-abbr{font-weight:800}'
         '.stg-al .stg-ldr .stg-abbr{color:#dc2626}'
         '.stg-nl .stg-ldr .stg-abbr{color:#1e3a5f}'
@@ -1464,8 +1464,9 @@ html,body{background:#eef2f8}
 #dw .ldr{background:#f0f4f8}
 /* standings cards on site background */
 #dw .stg-card{animation:cardIn .35s ease both}
-/* fix GB column width for old digest files that have width:100% on stg-tbl */
-#dw .stg-tbl{width:auto}
+/* stretch standings table to fill card, GB right-aligned */
+#dw .stg-tbl{width:100%}
+#dw .stg-gb{text-align:right}
 /* bottom row: standings left, leaders right */
 #dw .btm-row{display:flex;gap:24px;align-items:flex-start;max-width:1100px;margin:18px auto 0;flex-wrap:wrap}
 #dw .btm-stg{flex:2 1 480px;min-width:0}
