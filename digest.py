@@ -914,7 +914,11 @@ def render_summary_html(summary, pitchers, top_batter=None, qs_pitchers=None):
     # Bold the entire bullet for the top batter in KEY PLAYERS
     if top_batter and top_batter.get('name'):
         name = top_batter['name']
-        batter_key = name.split(',')[0].strip() if ',' in name else name.split()[-1]
+        _SUFFIXES = {'Jr.', 'Sr.', 'II', 'III', 'IV', 'V'}
+        parts = (name.split(',')[0].strip() if ',' in name else name).split()
+        while len(parts) > 1 and parts[-1] in _SUFFIXES:
+            parts.pop()
+        batter_key = parts[-1]
         lines = summary.split('\n')
         for i, line in enumerate(lines):
             if '•' in line and batter_key in line and '[BOLD]' not in line:
