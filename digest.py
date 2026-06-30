@@ -1147,12 +1147,13 @@ def get_stat_leaders(year):
     # API returns 'runsBattedIn' (not 'rbi'); statGroup filters out wrong contexts.
     ordered = [
         ('homeRuns',                     'HR',   'hitting'),
-        ('battingAverage',               'AVG',  'hitting'),
-        ('runsBattedIn',                 'RBI',  'hitting'),
-        ('stolenBases',                  'SB',   'hitting'),
         ('earnedRunAverage',             'ERA',  'pitching'),
+        ('runsBattedIn',                 'RBI',  'hitting'),
         ('strikeouts',                   'K',    'pitching'),
+        ('battingAverage',               'AVG',  'hitting'),
         ('walksAndHitsPerInningPitched', 'WHIP', 'pitching'),
+        ('stolenBases',                  'SB',   'hitting'),
+        ('saves',                        'SV',   'pitching'),
     ]
     cat_str   = ','.join(c[0] for c in ordered)
     label_map = {c[0]: c[1] for c in ordered}
