@@ -1135,8 +1135,8 @@ def render_standings_html(standings):
             for t in teams:
                 ldr_cls = ' stg-ldr' if t['leader'] else ''
                 tid = t.get('team_id', '')
-                logo = (f'<img src="https://www.mlbstatic.com/team-logos/{tid}.svg" '
-                        f'class="stg-logo" alt="">') if tid else ''
+                logo = (f'<span class="stg-logo-box"><img src="https://www.mlbstatic.com/team-logos/{tid}.svg" '
+                        f'class="stg-logo" alt=""></span>') if tid else ''
                 rows += (
                     f'<div class="stg-row{ldr_cls}">'
                     f'<span class="stg-team">{logo}<span class="stg-abbr">{t["abbr"]}</span></span>'
@@ -1312,7 +1312,8 @@ def build_html_email(date_display, game_summaries, leaders=None, standings=None)
         ".stg-dh{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
         ".stg-row{display:flex;align-items:center;justify-content:space-between;padding:3px 0;font-size:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
         '.stg-team{display:flex;align-items:center;gap:5px;width:55px;flex-shrink:0}'
-        '.stg-logo{width:16px;height:16px;object-fit:contain;flex-shrink:0}'
+        '.stg-logo-box{width:16px;height:16px;flex-shrink:0;overflow:hidden;display:inline-flex;align-items:center;justify-content:center}'
+        '.stg-logo{width:16px;height:16px;object-fit:contain;display:block}'
         '.stg-abbr{font-weight:600;color:#1e293b;white-space:nowrap}'
         '.stg-wl{color:#64748b;white-space:nowrap}'
         '.stg-gb{color:#94a3b8;white-space:nowrap}'
