@@ -1249,13 +1249,19 @@ def build_html_email(date_display, game_summaries, leaders=None, standings=None)
                           </div>"""
         count_line = "Off day"
     else:
-        # Sort by excitement: extra innings first, then by run differential ascending
-        sorted_summaries = sorted(
-            game_summaries,
-            key=lambda gs: (0 if gs.get('extra_innings') else 1, gs.get('run_diff', 99))
-        )
+        # Sort by excitement: extra innings first, then run diff, walk-off, total runs, innings
+        def _excitement_key(gs):
+            total = int(gs.get('away_score_val', 0)) + int(gs.get('home_score_val', 0))
+            return (
+                0 if gs.get('extra_innings') else 1,
+                gs.get('run_diff', 99),
+                0 if gs.get('walkoff') else 1,
+                -total,
+                -gs.get('innings', 9),
+            )
+        sorted_summaries = sorted(game_summaries, key=_excitement_key)
 
-        # "Game of the Night" banner for extra innings or 1-run games
+        # "Game of the Night" banner for extra innings or ≤2-run games
         top      = sorted_summaries[0]
         run_diff = top.get('run_diff', 99)
         t_away, t_home = top['matchup'].split(' @ ')
@@ -1265,7 +1271,7 @@ def build_html_email(date_display, game_summaries, leaders=None, standings=None)
         if top.get('extra_innings'):
             banner_label = "Extra Innings Thriller"
             banner_desc  = f"{t_away} {t_ascore} – {t_home} {t_hscore} ({top.get('innings', '?')} innings)"
-        elif run_diff == 1:
+        elif run_diff <= 2:
             banner_label = "Game of the Night"
             banner_desc  = f"{t_away} {t_ascore} – {t_home} {t_hscore}"
         else:
