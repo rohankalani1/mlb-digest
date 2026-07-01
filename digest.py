@@ -1136,7 +1136,7 @@ def render_standings_html(standings):
                 ldr_cls = ' stg-ldr' if t['leader'] else ''
                 tid = t.get('team_id', '')
                 logo = (f'<img src="https://www.mlbstatic.com/team-logos/{tid}.svg" '
-                        f'class="stg-lg" alt="">') if tid else ''
+                        f'class="stg-logo" alt="">') if tid else ''
                 rows += (
                     f'<div class="stg-row{ldr_cls}">'
                     f'<span class="stg-team">{logo}<span class="stg-abbr">{t["abbr"]}</span></span>'
@@ -1151,7 +1151,7 @@ def render_standings_html(standings):
                 f'</div>'
             )
         return (
-            f'<div class="stg-lg">'
+            f'<div class="stg-league">'
             f'<div class="stg-ttl {cls}">{label}</div>'
             f'<div class="stg-divs">{cards_html}</div>'
             f'</div>'
@@ -1301,7 +1301,7 @@ def build_html_email(date_display, game_summaries, leaders=None, standings=None)
     leaders_html = render_leaders_html(leaders) if leaders else ''
 
     standings_css = (
-        '.stg-lg{margin:18px auto 0;max-width:860px}'
+        '.stg-league{margin:18px auto 0;max-width:860px}'
         ".stg-ttl{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
         '.stg-ttl.stg-al{color:#dc2626}'
         '.stg-ttl.stg-nl{color:#1e3a5f}'
@@ -1311,8 +1311,8 @@ def build_html_email(date_display, game_summaries, leaders=None, standings=None)
         '.stg-card.stg-nl{border-top:3px solid #1e3a5f}'
         ".stg-dh{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
         ".stg-row{display:flex;align-items:center;justify-content:space-between;padding:3px 0;font-size:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
-        '.stg-team{display:flex;align-items:center;gap:5px}'
-        '.stg-lg{width:16px;height:16px;object-fit:contain;flex-shrink:0}'
+        '.stg-team{display:flex;align-items:center;gap:5px;width:55px;flex-shrink:0}'
+        '.stg-logo{width:16px;height:16px;object-fit:contain;flex-shrink:0}'
         '.stg-abbr{font-weight:600;color:#1e293b;white-space:nowrap}'
         '.stg-wl{color:#64748b;white-space:nowrap}'
         '.stg-gb{color:#94a3b8;white-space:nowrap}'
@@ -1502,8 +1502,8 @@ html,body{background:#eef2f8}
 #dw .btm-row{display:flex;gap:24px;align-items:flex-start;max-width:1100px;margin:18px auto 0;flex-wrap:wrap}
 #dw .btm-stg{flex:2 1 480px;min-width:0}
 #dw .btm-ldr{flex:1 1 260px;min-width:0}
-#dw .stg-lg{max-width:none;margin:0}
-#dw .stg-lg+.stg-lg{margin-top:16px}
+#dw .stg-league{max-width:none;margin:0}
+#dw .stg-league+.stg-league{margin-top:16px}
 /* key players section header */
 .kp-hdr{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-top:10px;border-top:1px solid #e2e8f0}
 /* larger linescore */
@@ -1528,7 +1528,7 @@ function restructureLayout(){
   var dw=document.getElementById('dw');
   if(!dw||dw.querySelector('.btm-row'))return;
   var ldrs=dw.querySelector('.ldrs');
-  var stgLgs=dw.querySelectorAll('.stg-lg');
+  var stgLgs=dw.querySelectorAll('.stg-league');
   if(!ldrs&&!stgLgs.length)return;
   var btmRow=document.createElement('div');
   btmRow.className='btm-row';
